@@ -8,36 +8,81 @@
     :root{
       --main:#4f46e5; --bg:#f4f6fb; --card:#fff; --text:#1f2937;
       --danger:#dc2626; --muted:#6b7280; --line:#e5e7eb;
+      --ok:#16a34a; --warn:#f59e0b;
     }
+    *{box-sizing:border-box;}
     body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);}
-    header{background:var(--main);color:#fff;display:flex;justify-content:space-around;padding:12px 0;}
-    header button{background:none;border:none;color:#fff;font-size:14px;cursor:pointer;}
-    .container{padding:16px;}
-    .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
+    header{background:var(--main);color:#fff;display:flex;justify-content:space-around;padding:12px 0;position:sticky;top:0;z-index:5;}
+    header button{background:none;border:none;color:#fff;font-size:14px;cursor:pointer;padding:8px 10px;border-radius:10px;}
+    header button.active{background:rgba(255,255,255,.18);}
+    .container{padding:16px;max-width:980px;margin:0 auto;}
+    .card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 8px 22px rgba(0,0,0,0.06);}
     .hidden{display:none;}
-    .primary{background:var(--main);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;}
-    .sub{background:#eef2ff;border:1px solid #c7d2fe;padding:10px;border-radius:10px;width:100%;margin-bottom:8px;cursor:pointer;text-align:left;}
+    .primary{background:var(--main);color:#fff;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;}
+    .primary:active{transform:translateY(1px);}
+    .sub{background:#eef2ff;border:1px solid #c7d2fe;padding:12px;border-radius:12px;width:100%;margin-bottom:8px;cursor:pointer;text-align:left;font-weight:700;}
     .sub.active{background:var(--main);color:#fff;border-color:var(--main);}
-    input,select{width:100%;padding:10px;margin-top:6px;border:1px solid var(--line);border-radius:10px;background:#fff;}
-    .danger{background:var(--danger);color:#fff;border:none;padding:8px 12px;border-radius:10px;cursor:pointer;}
-    .small{font-size:13px;color:var(--muted);}
-    .ok{color:green;font-weight:800;}
-    .no{color:red;font-weight:800;}
-    .row{display:flex;gap:10px;align-items:center;}
-    .row > *{flex:1;}
+    input,select{width:100%;padding:11px;margin-top:6px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:16px;}
+    .danger{background:var(--danger);color:#fff;border:none;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:800;}
+    .ghost{background:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;}
+    .small{font-size:13px;color:var(--muted);line-height:1.4;}
+    .ok{color:var(--ok);font-weight:900;}
+    .no{color:var(--danger);font-weight:900;}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .row > *{flex:1;min-width:140px;}
+    .pill{display:inline-block;padding:5px 10px;border-radius:999px;background:#f3f4f6;font-size:12px;color:#111;}
+    .note{padding:12px;border-radius:12px;background:#f9fafb;border:1px dashed var(--line);}
     hr.sep{border:none;border-top:1px solid var(--line);margin:12px 0;}
-    .listItem{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px;}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    .chk{display:flex;gap:10px;align-items:flex-start;margin-top:8px;}
-    .chk label{display:flex;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;}
-    .chk input{width:auto;margin:0;}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#f3f4f6;font-size:12px;color:#111;}
-    .note{padding:10px;border-radius:10px;background:#f9fafb;border:1px dashed var(--line);}
+    .listItem{border-top:1px dashed var(--line);padding-top:12px;margin-top:12px;}
     .kpi{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
-    .kpi .big{font-size:22px;font-weight:900;}
+    .kpi .big{font-size:24px;font-weight:950;letter-spacing:-0.3px;}
+    .banner{
+      padding:14px;border-radius:14px;background:linear-gradient(135deg,#eef2ff,#ffffff);
+      border:1px solid #dbeafe;
+    }
 
-    /* 클릭 막힘 방지용 */
-    #nameScreen, #nameScreen * { pointer-events: auto; }
+    /* 체크박스 영역(모바일에서 화면 밖으로 안 나가게) */
+    .chkGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
+    .chkGrid label{
+      display:flex;gap:8px;align-items:center;
+      padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;
+      min-width:0; /* 줄바꿈 허용 */
+      font-size:14px;
+    }
+    .chkGrid input{width:auto;margin:0;flex:none;}
+    @media (max-width:520px){
+      .chkGrid{max-width:80vw;} /* 요청: 5분의4 정도 */
+      .chkGrid label{font-size:13px;padding:9px;}
+      header{gap:6px;flex-wrap:wrap;}
+    }
+
+    /* 모달 */
+    .modalBack{
+      position:fixed;inset:0;background:rgba(0,0,0,.38);
+      display:flex;align-items:center;justify-content:center;
+      z-index:9999;padding:18px;
+    }
+    .modal{
+      width:min(520px, 92vw);
+      background:#fff;border-radius:18px;
+      box-shadow:0 20px 60px rgba(0,0,0,.25);
+      overflow:hidden;
+      transform:translateY(10px) scale(.98);
+      animation:pop .18s ease-out forwards;
+    }
+    @keyframes pop{
+      to{transform:translateY(0) scale(1);}
+    }
+    .modalTop{
+      padding:18px 18px 12px;
+      background:linear-gradient(135deg,#4f46e5,#7c3aed);
+      color:#fff;
+    }
+    .modalTop h3{margin:0;font-size:18px;letter-spacing:-0.2px;}
+    .modalBody{padding:16px 18px;}
+    .modalBody .bigMsg{font-size:20px;font-weight:950;letter-spacing:-0.4px;line-height:1.35;}
+    .modalBody .subMsg{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.45;}
+    .modalActions{padding:14px 18px;display:flex;justify-content:flex-end;gap:10px;background:#fafafa;border-top:1px solid var(--line);}
   </style>
 </head>
 
@@ -62,41 +107,31 @@
       </label>
     </div>
 
-    <!-- ✅ 인라인 onclick: 이벤트리스너가 꼬여도 무조건 실행됨 -->
-    <button id="startBtn" class="primary" style="margin-top:10px;" onclick="startApp()">
-      시작
-    </button>
-
-    <p class="small" style="margin:10px 0 0;">
-      ※ 버튼 눌러도 반응이 없으면 파일 확장자/저장 방식 문제일 가능성이 높아요.
-    </p>
-
-    <div class="note small" style="margin-top:10px;">
-      <b>확인:</b> 이 파일 이름이 정말 <b>index.html</b>인지 확인해줘.<br>
-      (윈도우에서 확장자 숨김이면 <b>index.html.txt</b>로 저장돼도 모를 수 있어!)
-    </div>
+    <button id="startBtn" class="primary" style="margin-top:12px;" onclick="startApp()">시작</button>
   </div>
 </div>
 
 <!-- 앱 -->
 <div id="app" class="hidden">
   <header>
-    <button data-nav="record" onclick="showScreen('record')">오늘 기록</button>
-    <button data-nav="today" onclick="showScreen('today')">오늘 현황</button>
-    <button data-nav="week" onclick="showScreen('week')">4주 통계</button>
-    <button data-nav="month" onclick="showScreen('month')">월 벌금</button>
+    <button id="nav-record" class="active" onclick="showScreen('record')">오늘 기록</button>
+    <button id="nav-today" onclick="showScreen('today')">오늘 현황</button>
+    <button id="nav-week" onclick="showScreen('week')">4주 통계</button>
+    <button id="nav-fine" onclick="showScreen('fine4w')">4주 벌금</button>
+    <button id="nav-acc" onclick="showScreen('accTime')">누적시간</button>
   </header>
 
   <div class="container">
+
     <!-- 오늘 기록 -->
     <div id="record" class="screen">
       <div class="card">
         <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
-        <div class="small">기준일: <span id="basisDate"></span> (새벽 3시 마감)</div>
+        <div class="small">기준일: <span id="basisDate"></span> (마감: 다음날 새벽 3시)</div>
 
         <div class="note small" style="margin-top:10px;">
           ✅ 오늘 기록이 1개라도 있으면 “공부한 날(⭕)”<br>
-          ❌ 오늘 아무 기록도 없으면 “접속 안함”으로 15,000원 확정
+          ❌ 오늘 아무 기록이 없으면 “접속 안 함”으로 벌금 <b>15,000원</b> 확정(마감 후)
         </div>
 
         <hr class="sep">
@@ -116,22 +151,22 @@
 
           <div style="margin-top:10px;">
             <label class="small">결과 (여러 개 선택 가능)</label>
-            <div class="grid2 chk" id="wordOutcomeBox">
+            <div class="chkGrid" id="wordOutcomeBox">
               <label><input type="checkbox" value="한>영 합격">한>영 합격</label>
               <label><input type="checkbox" value="한>영 불합격">한>영 불합격</label>
               <label><input type="checkbox" value="영>한 합격">영>한 합격</label>
               <label><input type="checkbox" value="영>한 불합격">영>한 불합격</label>
             </div>
-            <p class="small" style="margin:8px 0 0;">벌금: 불합격 체크 1개당 <b>5,000원</b></p>
+            <p class="small" style="margin:8px 0 0;">벌금: <b>불합격 체크 1개당 5,000원</b></p>
           </div>
 
           <div class="row" style="margin-top:12px;">
             <button class="primary" onclick="saveWord()">저장</button>
-            <button class="danger" onclick="clearWordSelections()">선택 초기화</button>
+            <button class="ghost" onclick="clearWordSelections()">선택 초기화</button>
           </div>
 
           <div class="listItem">
-            <div class="small"><b>오늘 저장된 단어 기록</b></div>
+            <div class="small"><b>오늘 저장된 단어 기록</b> (같은 구간 중복 저장 불가)</div>
             <div id="todayWordItems" class="small" style="margin-top:8px;"></div>
           </div>
         </div>
@@ -156,11 +191,11 @@
 
           <div class="row" style="margin-top:12px;">
             <button class="primary" onclick="savePattern()">저장</button>
-            <button class="danger" onclick="clearPatternInputs()">입력 초기화</button>
+            <button class="ghost" onclick="clearPatternInputs()">입력 초기화</button>
           </div>
 
           <div class="listItem">
-            <div class="small"><b>오늘 저장된 패턴 기록</b></div>
+            <div class="small"><b>오늘 저장된 패턴 기록</b> (같은 Day 중복 저장 불가)</div>
             <div id="todayPatternItems" class="small" style="margin-top:8px;"></div>
           </div>
         </div>
@@ -178,6 +213,9 @@
               <option value="40분">40분</option>
               <option value="50분">50분</option>
               <option value="60분">60분</option>
+              <option value="2시간">2시간</option>
+              <option value="3시간">3시간</option>
+              <option value="4시간">4시간</option>
             </select>
             <p class="small" style="margin:8px 0 0;">벌금: <b>30분 이하</b> 선택 시 <b>5,000원</b></p>
           </div>
@@ -197,12 +235,22 @@
         <div class="card" style="margin-top:12px;">
           <div class="kpi">
             <div>
-              <div class="small">오늘(기준일) 내 벌금</div>
+              <div class="small">오늘(기준일) 내 벌금 (마감 전에는 “예상”)</div>
               <div id="todayFineBig" class="big">0원</div>
             </div>
             <div><span class="pill">자동 계산</span></div>
           </div>
           <div id="todayFineDetail" class="small" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- 휴무 요청 버튼(첫 화면 맨 아래) -->
+        <div class="card" style="margin-top:12px;">
+          <div class="small"><b>특별 기능</b> — 오늘 쉬고 싶다면?</div>
+          <div class="small" style="margin-top:6px;">“오늘은 나 쉴게!”를 누르면, 나머지 두 사람이 모두 승인해야 오늘 벌금이 스킵돼요.</div>
+          <div class="row" style="margin-top:10px;">
+            <button class="ghost" onclick="requestRest()">오늘은 나 쉴게!</button>
+          </div>
+          <div id="restMyStatus" class="small" style="margin-top:10px;"></div>
         </div>
 
       </div>
@@ -214,36 +262,79 @@
     <!-- 4주 통계 -->
     <div id="week" class="screen hidden"></div>
 
-    <!-- 월 벌금 -->
-    <div id="month" class="screen hidden">
+    <!-- 4주 벌금 -->
+    <div id="fine4w" class="screen hidden">
       <div class="card">
-        <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
-        <p class="small" style="margin:10px 0 0;">※ 확인창에 ‘초기화’를 입력해야 실행됩니다.</p>
+        <div class="row" style="align-items:flex-start;">
+          <div>
+            <h3 style="margin:0 0 6px;">4주 벌금</h3>
+            <div class="small">최근 28일(마감 지난 날짜만 확정 계산)</div>
+          </div>
+          <div style="text-align:right;">
+            <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
+            <div class="small" style="margin-top:6px;">비밀번호: <b>20262026</b></div>
+          </div>
+        </div>
       </div>
-      <div id="monthBody"></div>
+      <div id="fine4wBody"></div>
     </div>
+
+    <!-- 누적시간 -->
+    <div id="accTime" class="screen hidden">
+      <div class="card banner">
+        <b>영어말하기훈련을 실제 얼마나 했는지 누적량이 표시됩니다</b>
+        <div class="small" style="margin-top:6px;">
+          ※ 이 누적 데이터는 “전체 데이터 초기화”를 눌러도 지워지지 않아요. 앱이 살아있는 한 계속 누적됩니다.
+        </div>
+      </div>
+      <div id="accBody"></div>
+    </div>
+
   </div>
 </div>
 
-<script>
-/* ===== 안전장치: 에러 있으면 바로 보여주기 ===== */
-window.addEventListener("error", (e)=> alert("JS 오류: " + (e.message || "unknown")));
+<!-- 모달 -->
+<div id="modalRoot" class="hidden"></div>
 
-/* ===== 데이터/설정 ===== */
+<script>
+/* =========================================================
+   저장 키
+========================================================= */
 const USERS = ["오설란","오미진","김미나"];
-const KEY = "studyData";
+const KEY = "studyData";                 // 일자별 기록(초기화 대상)
 const LS_USER = "currentUser";
 const LS_REMEMBER = "rememberMe";
+const KEY_ACC = "accSpeakingMinutes";    // 누적시간(초기화해도 유지)
 
+/* =========================================================
+   날짜/마감 로직
+   - "오늘 기록 가능" 기준일: 새벽 3시 이전이면 전날이 기준일
+   - 벌금 확정은 "마감 지난 날짜"만 계산(미리 15,000 쌓이는 버그 방지)
+========================================================= */
 function basisDateKey(){
   const d = new Date();
   if(d.getHours() < 3) d.setDate(d.getDate()-1);
   return d.toISOString().slice(0,10);
 }
+function dateKeyPlusDays(isoKey,delta){
+  const d = new Date(isoKey); d.setDate(d.getDate()+delta);
+  return d.toISOString().slice(0,10);
+}
+function isDateClosed(dateKey){
+  // dateKey(YYYY-MM-DD)의 기록 마감: 다음날 03:00 이후
+  const d = new Date(dateKey + "T00:00:00");
+  d.setDate(d.getDate()+1);
+  d.setHours(3,0,0,0);
+  return Date.now() >= d.getTime();
+}
+
 function load(){ return JSON.parse(localStorage.getItem(KEY)) || {}; }
 function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
 function remembered(){ return localStorage.getItem(LS_REMEMBER) === "1"; }
 function currentUser(){ return localStorage.getItem(LS_USER) || ""; }
+
+// remember 체크 안 한 세션용
+function getActiveUser(){ return currentUser() || window.__tempUser || ""; }
 
 function ensureRow(data, dateKey, user){
   data[dateKey] ??= {};
@@ -259,8 +350,96 @@ function hasAnyRecord(row){
   const hasSpeaking = typeof row.speakingTime === "string" && row.speakingTime.length > 0;
   return hasWord || hasPattern || hasSpeaking;
 }
-function calcDayFine(row){
-  if(!hasAnyRecord(row)) return 15000;
+
+/* =========================================================
+   휴무(쉬기) 요청 로직
+   - 오늘(기준일)만 가능
+   - 요청자 + 나머지 두 명 모두 승인 시 벌금 스킵
+========================================================= */
+function ensureRestObj(data, dateKey){
+  data[dateKey] ??= {};
+  data[dateKey].__rest ??= {}; // 날짜 공용 휴무 요청들
+  // 구조: data[dateKey].__rest[requester] = { requester, approvals:[], status:"pending|approved" }
+  return data[dateKey].__rest;
+}
+function getRestState(data, dateKey, requester){
+  return data[dateKey]?.__rest?.[requester] || null;
+}
+function isRestApproved(data, dateKey, requester){
+  const s = getRestState(data, dateKey, requester);
+  return !!(s && s.status === "approved");
+}
+
+function requestRest(){
+  const u = getActiveUser();
+  if(!u) return showModal("이름을 먼저 선택해주세요", "이름 선택 후 이용할 수 있어요.");
+  const k = basisDateKey();
+  const data = load();
+  const rest = ensureRestObj(data, k);
+
+  if(isDateClosed(k)){
+    return showModal("마감 후에는 휴무 요청이 불가해요", "오늘(기준일) 마감 전까지만 요청할 수 있어요.");
+  }
+  if(rest[u]?.status === "approved"){
+    return showModal("이미 휴무 승인 완료!", "오늘 벌금은 스킵됩니다 😴");
+  }
+  if(rest[u]?.status === "pending"){
+    return showModal("이미 휴무 요청이 있어요", "다른 두 사람이 승인하면 벌금이 스킵돼요.");
+  }
+
+  rest[u] = { requester:u, approvals:[], status:"pending", ts:Date.now() };
+  save(data);
+  renderAll();
+  showModal("휴무 요청 완료", "다른 두 사람이 ‘승인’하면 오늘 벌금이 스킵돼요.");
+}
+
+function approveRest(requester){
+  const me = getActiveUser();
+  const k = basisDateKey();
+  const data = load();
+  const rest = ensureRestObj(data, k);
+  const state = rest[requester];
+  if(!state) return;
+  if(state.status === "approved") return;
+
+  if(me === requester){
+    return showModal("본인은 승인할 수 없어요", "다른 두 사람이 승인해야 합니다.");
+  }
+  if(!state.approvals.includes(me)) state.approvals.push(me);
+
+  // 승인 조건: 나머지 2명 모두 승인
+  const needed = USERS.filter(x => x !== requester);
+  const ok = needed.every(x => state.approvals.includes(x));
+  if(ok) state.status = "approved";
+
+  rest[requester] = state;
+  save(data);
+  renderAll();
+}
+
+/* =========================================================
+   벌금 계산
+   규칙:
+   - 기록 0개면(접속 안함) 15,000원 (단, 마감 지난 날짜만 확정)
+   - 단어: 한>영 불합격, 영>한 불합격 체크 1개당 5,000원
+   - 패턴: 불합격 5,000원
+   - 문장: 30분 이하 5,000원
+   - 휴무 승인: 그 날짜 벌금 0원
+========================================================= */
+function calcFineForDate(dateKey, user){
+  const data = load();
+  // 휴무 승인 시 벌금 스킵
+  if(isRestApproved(data, dateKey, user)) return 0;
+
+  const row = data[dateKey]?.[user];
+  const has = hasAnyRecord(row);
+
+  // 마감이 안 지난 날짜(오늘 진행중)는 "접속 안함 15000"을 확정하지 않음
+  // => 0 기록이어도 아직 기회 있음
+  if(!isDateClosed(dateKey) && !has) return 0;
+
+  if(!has) return 15000;
+
   let fine = 0;
   let wordFail = 0;
   for(const a of (row.wordAttempts || [])){
@@ -274,10 +453,50 @@ function calcDayFine(row){
   return fine;
 }
 
-/* ===== 화면 전환 ===== */
+/* =========================================================
+   누적시간(초기화해도 유지)
+========================================================= */
+function loadAcc(){ return JSON.parse(localStorage.getItem(KEY_ACC)) || {}; }
+function saveAcc(acc){ localStorage.setItem(KEY_ACC, JSON.stringify(acc)); }
+
+function timeToMinutes(label){
+  const map = {
+    "30분 이하": 30,
+    "30분": 30,
+    "40분": 40,
+    "50분": 50,
+    "60분": 60,
+    "2시간": 120,
+    "3시간": 180,
+    "4시간": 240,
+  };
+  return map[label] ?? 0;
+}
+function addAcc(user, minutes){
+  const acc = loadAcc();
+  acc[user] = (acc[user] || 0) + minutes;
+  saveAcc(acc);
+}
+function subAcc(user, minutes){
+  const acc = loadAcc();
+  acc[user] = Math.max(0, (acc[user] || 0) - minutes);
+  saveAcc(acc);
+}
+
+/* =========================================================
+   화면 전환
+========================================================= */
+function setNavActive(screenId){
+  const ids = ["record","today","week","fine4w","accTime"];
+  ids.forEach(id=>{
+    const btn = document.getElementById("nav-"+(id==="fine4w"?"fine":id==="accTime"?"acc":id));
+    if(btn) btn.classList.toggle("active", id === screenId);
+  });
+}
 function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
+  setNavActive(id);
   renderAll();
 }
 function openSub(subId, btnEl){
@@ -287,41 +506,9 @@ function openSub(subId, btnEl){
   document.getElementById("sub-"+subId).classList.remove("hidden");
 }
 
-/* ===== 로그인(이름 선택) ===== */
-function startApp(){
-  // ✅ 클릭 자체가 되는지 확인용: 이 alert가 안 뜨면 “클릭이 막힌 것”
-  alert("시작 버튼 클릭됨 ✅");
-
-  const sel = document.getElementById("userSelect");
-  const rememberChk = document.getElementById("rememberMe");
-  const name = (sel?.value || "").trim();
-  if(!name) return alert("이름을 선택하세요.");
-
-  // 로그인 유지 체크에 따라 저장/비저장 처리
-  if(rememberChk?.checked){
-    localStorage.setItem(LS_USER, name);
-    localStorage.setItem(LS_REMEMBER, "1");
-  }else{
-    // 유지하지 않으면: 사용자 저장/유지 플래그 삭제 (매번 선택)
-    localStorage.removeItem(LS_USER);
-    localStorage.removeItem(LS_REMEMBER);
-    // 대신 이번 실행 세션에서는 쓸 수 있게, window에만 저장
-    window.__tempUser = name;
-  }
-
-  // 화면 전환
-  document.getElementById("nameScreen").classList.add("hidden");
-  document.getElementById("app").classList.remove("hidden");
-  showScreen("record");
-  renderAll();
-}
-
-// currentUser()가 비어있고, 유지 체크 안 했을 때는 임시 사용자 사용
-function getActiveUser(){
-  return currentUser() || window.__tempUser || "";
-}
-
-/* ===== 옵션 생성 ===== */
+/* =========================================================
+   단어/패턴/문장 저장
+========================================================= */
 function buildWordRanges(){
   const sel = document.getElementById("wordRange");
   sel.innerHTML = "";
@@ -344,8 +531,6 @@ function buildPatternDays(){
   }
   sel.value = "Day1";
 }
-
-/* ===== A 단어 ===== */
 function getSelectedWordOutcomes(){
   return Array.from(document.querySelectorAll("#wordOutcomeBox input[type='checkbox']:checked")).map(x=>x.value);
 }
@@ -354,18 +539,19 @@ function clearWordSelections(){
 }
 function saveWord(){
   const u = getActiveUser();
-  if(!u) return alert("이름부터 선택하고 들어와야 해요.");
-  const data = load();
+  if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
   const k = basisDateKey();
+  if(isDateClosed(k)) return showModal("마감 후 저장 불가", "새벽 3시 이후에는 전날 기록이 잠깁니다.");
+
+  const data = load();
   const row = ensureRow(data, k, u);
 
   const range = document.getElementById("wordRange").value;
   const outcomes = getSelectedWordOutcomes();
-  if(outcomes.length === 0) return alert("결과를 1개 이상 선택해줘.");
+  if(outcomes.length === 0) return showModal("결과 선택 필요", "결과를 1개 이상 선택해줘.");
 
-  // 같은 구간 중복 저장 방지
   if(row.wordAttempts.some(a => a.range === range)){
-    return alert("오늘은 이 구간이 이미 저장되어 있어요. (삭제 후 다시 저장 가능)");
+    return showModal("중복 저장 방지", "오늘은 이 구간이 이미 저장되어 있어요. (삭제 후 다시 저장 가능)");
   }
 
   row.wordAttempts.push({ range, outcomes, ts: Date.now() });
@@ -384,20 +570,20 @@ function deleteWord(range){
   save(data);
   renderAll();
 }
-
-/* ===== B 패턴 ===== */
 function savePattern(){
   const u = getActiveUser();
-  if(!u) return alert("이름부터 선택하고 들어와야 해요.");
-  const data = load();
+  if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
   const k = basisDateKey();
+  if(isDateClosed(k)) return showModal("마감 후 저장 불가", "새벽 3시 이후에는 전날 기록이 잠깁니다.");
+
+  const data = load();
   const row = ensureRow(data, k, u);
 
   const day = document.getElementById("patternDay").value;
   const result = document.getElementById("patternResult").value;
 
   if(row.patternAttempts.some(p => p.day === day)){
-    return alert("오늘은 이 Day가 이미 저장되어 있어요. (삭제 후 다시 저장 가능)");
+    return showModal("중복 저장 방지", "오늘은 이 Day가 이미 저장되어 있어요. (삭제 후 다시 저장 가능)");
   }
 
   row.patternAttempts.push({ day, result, ts: Date.now() });
@@ -419,36 +605,54 @@ function clearPatternInputs(){
   document.getElementById("patternDay").value = "Day1";
   document.getElementById("patternResult").value = "합격";
 }
-
-/* ===== C 문장말하기 ===== */
 function saveSpeaking(){
   const u = getActiveUser();
-  if(!u) return alert("이름부터 선택하고 들어와야 해요.");
-  const data = load();
+  if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
   const k = basisDateKey();
+  if(isDateClosed(k)) return showModal("마감 후 저장 불가", "새벽 3시 이후에는 전날 기록이 잠깁니다.");
+
+  const data = load();
   const row = ensureRow(data, k, u);
 
   const t = document.getElementById("speakingTime").value;
-  if(!t) return alert("시간을 선택해줘.");
-  if(row.speakingTime) return alert("오늘은 이미 저장되어 있어요. (삭제 후 다시 저장)");
+  if(!t) return showModal("시간 선택 필요", "훈련 시간을 선택해줘.");
+  if(row.speakingTime) return showModal("중복 저장 방지", "오늘은 이미 저장되어 있어요. (삭제 후 다시 저장)");
 
   row.speakingTime = t;
   save(data);
+
+  // 누적시간 반영(초기화해도 유지)
+  addAcc(u, timeToMinutes(t));
+
   renderAll();
 }
 function deleteSpeaking(){
-  if(!confirm("삭제할까요?")) return;
+  if(!confirm("삭제할까요? (누적시간도 함께 되돌립니다)")) return;
   const u = getActiveUser();
   const data = load();
   const k = basisDateKey();
   const row = data[k]?.[u];
-  if(!row) return;
+  if(!row || !row.speakingTime) return;
+
+  // 누적시간 되돌리기
+  subAcc(u, timeToMinutes(row.speakingTime));
+
   delete row.speakingTime;
   save(data);
   renderAll();
 }
 
-/* ===== 렌더 ===== */
+/* =========================================================
+   렌더링
+========================================================= */
+function formatMinutes(mins){
+  const h = Math.floor(mins/60);
+  const m = mins % 60;
+  if(h<=0) return `${m}분`;
+  if(m===0) return `${h}시간`;
+  return `${h}시간 ${m}분`;
+}
+
 function renderWordTodayList(){
   const el = document.getElementById("todayWordItems");
   const u = getActiveUser();
@@ -468,11 +672,12 @@ function renderWordTodayList(){
           </span><br>
           <span class="small">${(a.outcomes||[]).join(", ")}</span>
         </div>
-        <button class="danger" style="padding:6px 10px;" onclick="deleteWord('${a.range}')">삭제</button>
+        <button class="danger" style="padding:8px 10px;" onclick="deleteWord('${a.range}')">삭제</button>
       </div>
     `;
   }).join("");
 }
+
 function renderPatternTodayList(){
   const el = document.getElementById("todayPatternItems");
   const u = getActiveUser();
@@ -484,12 +689,17 @@ function renderPatternTodayList(){
     const fine = (p.result==="불합격") ? 5000 : 0;
     return `
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
-        <div><b>${p.day}</b> <span class="pill" style="background:${fine? "#fee2e2":"#dcfce7"};color:${fine? "#991b1b":"#166534"};">${p.result}${fine? ` / ${fine.toLocaleString()}원`:""}</span></div>
-        <button class="danger" style="padding:6px 10px;" onclick="deletePattern('${p.day}')">삭제</button>
+        <div><b>${p.day}</b>
+          <span class="pill" style="background:${fine? "#fee2e2":"#dcfce7"};color:${fine? "#991b1b":"#166534"};">
+            ${p.result}${fine? ` / ${fine.toLocaleString()}원`:""}
+          </span>
+        </div>
+        <button class="danger" style="padding:8px 10px;" onclick="deletePattern('${p.day}')">삭제</button>
       </div>
     `;
   }).join("");
 }
+
 function renderSpeakingToday(){
   const el = document.getElementById("todaySpeakingItem");
   const u = getActiveUser();
@@ -498,63 +708,160 @@ function renderSpeakingToday(){
   const t = data[k]?.[u]?.speakingTime || "";
   if(!t){ el.innerHTML = `<span class="pill">없음</span>`; return; }
   const fine = (t==="30분 이하") ? 5000 : 0;
-  el.innerHTML = `<span class="pill" style="background:${fine? "#fee2e2":"#dcfce7"};color:${fine? "#991b1b":"#166534"};">${t}${fine? ` / ${fine.toLocaleString()}원`:" / 벌금 없음"}</span>`;
+  el.innerHTML = `<span class="pill" style="background:${fine? "#fee2e2":"#dcfce7"};color:${fine? "#991b1b":"#166534"};">
+    ${t}${fine? ` / ${fine.toLocaleString()}원`:" / 벌금 없음"}
+  </span>`;
 }
 
 function renderTodayFine(){
   const u = getActiveUser();
-  const data = load();
   const k = basisDateKey();
-  const row = data[k]?.[u];
-  const fine = calcDayFine(row);
   document.getElementById("basisDate").textContent = k;
+
+  // 오늘 벌금은 "마감 전이면 예상값(기록 0개면 0원 표시)"
+  const fine = calcFineForDate(k, u);
   document.getElementById("todayFineBig").textContent = fine.toLocaleString() + "원";
 
+  const data = load();
+  const row = data[k]?.[u];
+
   const detail = document.getElementById("todayFineDetail");
-  if(!hasAnyRecord(row)){
-    detail.innerHTML = `오늘 기록 0개 → <b>접속 안함 15,000원</b>`;
+
+  if(isRestApproved(data, k, u)){
+    detail.innerHTML = `😴 <b>휴무 승인 완료</b> — 오늘 벌금은 스킵됩니다.`;
     return;
   }
+
+  const has = hasAnyRecord(row);
+  if(!has && !isDateClosed(k)){
+    detail.innerHTML = `아직 마감 전이라 “접속 안 함(15,000원)”은 확정되지 않아요.`;
+    return;
+  }
+  if(!has && isDateClosed(k)){
+    detail.innerHTML = `오늘 기록 0개 → <b>접속 안 함 15,000원</b>`;
+    return;
+  }
+
   let wordFail=0;
-  for(const a of (row.wordAttempts||[])){
+  for(const a of (row?.wordAttempts||[])){
     for(const o of (a.outcomes||[])){
       if(o==="한>영 불합격"||o==="영>한 불합격") wordFail++;
     }
   }
-  const patternFail=(row.patternAttempts||[]).filter(p=>p.result==="불합격").length;
-  const speakUnder30=(row.speakingTime==="30분 이하");
+  const patternFail=(row?.patternAttempts||[]).filter(p=>p.result==="불합격").length;
+  const speakUnder30=(row?.speakingTime==="30분 이하");
+
   detail.innerHTML =
     `단어 불합격 체크 ${wordFail}개 → ${(wordFail*5000).toLocaleString()}원<br>` +
     `패턴 불합격 ${patternFail}회 → ${(patternFail*5000).toLocaleString()}원<br>` +
     `문장말하기 30분 이하 ${speakUnder30?"예":"아니오"} → ${(speakUnder30?5000:0).toLocaleString()}원`;
 }
 
-/* 오늘/주/월 화면은 기존처럼 유지(요약 구현) */
+function renderRestMyStatus(){
+  const u = getActiveUser();
+  const k = basisDateKey();
+  const data = load();
+  const el = document.getElementById("restMyStatus");
+  const s = getRestState(data, k, u);
+  if(!u){ el.textContent=""; return; }
+  if(!s){
+    el.innerHTML = `<span class="pill">휴무 요청 없음</span>`;
+    return;
+  }
+  if(s.status==="approved"){
+    el.innerHTML = `<span class="pill" style="background:#dcfce7;color:#166534;">휴무 승인 완료 ✅ (벌금 스킵)</span>`;
+    return;
+  }
+  const needed = USERS.filter(x=>x!==u);
+  const approved = s.approvals || [];
+  const left = needed.filter(x=>!approved.includes(x));
+  el.innerHTML = `
+    <span class="pill" style="background:#fff7ed;color:#9a3412;">휴무 요청중 ⏳</span>
+    <div class="small" style="margin-top:8px;">승인 필요: <b>${left.join(", ")}</b></div>
+  `;
+}
+
 function renderTodayScreen(){
   const data = load();
   const k = basisDateKey();
   const el = document.getElementById("today");
-  el.innerHTML = `<div class="card"><h3 style="margin:0 0 6px;">오늘 현황</h3><div class="small">${k} 기준</div></div>`;
+
+  el.innerHTML = `
+    <div class="card">
+      <h3 style="margin:0 0 6px;">오늘 현황</h3>
+      <div class="small">${k} 기준 (마감: 다음날 3시)</div>
+    </div>
+  `;
+
+  // 휴무 요청 패널(다른 두 명이 승인하는 UI)
+  const restAll = data[k]?.__rest || {};
+  const pending = Object.values(restAll).filter(x=>x && x.status==="pending");
+  if(pending.length>0){
+    const me = getActiveUser();
+    el.innerHTML += `
+      <div class="card">
+        <b>휴무 요청</b>
+        <div class="small" style="margin-top:6px;">요청자가 “오늘은 나 쉴게!”를 눌렀어요. 나머지 두 사람이 모두 승인하면 오늘 벌금이 스킵됩니다.</div>
+        ${pending.map(req=>{
+          const requester = req.requester;
+          const approvals = req.approvals || [];
+          const needed = USERS.filter(x=>x!==requester);
+          const left = needed.filter(x=>!approvals.includes(x));
+          const canApprove = me && me !== requester && !approvals.includes(me);
+          return `
+            <div class="listItem">
+              <div><b>${requester}</b> — 휴무 요청중</div>
+              <div class="small" style="margin-top:6px;">승인 현황: ${approvals.length}/2 (남은 승인: <b>${left.join(", ")}</b>)</div>
+              <div class="row" style="margin-top:10px;">
+                <button class="${canApprove?'primary':'ghost'}" onclick="${canApprove?`approveRest('${requester}')`:'void(0)'}" ${canApprove?'':'disabled'}>
+                  ${canApprove?'승인하기':'승인 불가'}
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
   USERS.forEach(u=>{
-    const ok = hasAnyRecord(data[k]?.[u]);
-    el.innerHTML += `<div class="card"><b>${u}</b><br><span class="${ok?"ok":"no"}">${ok?"⭕ 기록 있음":"❌ 기록 없음"}</span></div>`;
+    const row = data[k]?.[u];
+    const ok = hasAnyRecord(row);
+    const restOk = isRestApproved(data, k, u);
+
+    let statusHTML = "";
+    if(restOk){
+      statusHTML = `<span class="ok">😴 휴무 승인(벌금 스킵)</span>`;
+    }else if(ok){
+      statusHTML = `<span class="ok">⭕ 기록 있음</span>`;
+    }else{
+      statusHTML = `<span class="no">❌ 기록 없음</span> <span class="small">미실행</span>`;
+    }
+
+    el.innerHTML += `<div class="card"><b>${u}</b><br>${statusHTML}</div>`;
   });
 }
-function dateKeyPlusDays(isoKey,delta){
-  const d = new Date(isoKey); d.setDate(d.getDate()+delta);
-  return d.toISOString().slice(0,10);
-}
+
 function renderWeekScreen(){
   const data = load();
   const baseKey = basisDateKey();
   const el = document.getElementById("week");
+
   el.innerHTML = `<div class="card"><h3 style="margin:0 0 6px;">4주 통계</h3><div class="small">최근 28일</div></div>`;
+
   USERS.forEach(u=>{
-    let exec=0,no=0,wordFail=0,patternFail=0,speakUnder30=0;
+    let exec=0,no=0,wordFail=0,patternFail=0,speakUnder30=0,restDays=0;
     for(let i=0;i<28;i++){
-      const k = dateKeyPlusDays(baseKey, -i);
-      const row = data[k]?.[u];
-      if(hasAnyRecord(row)) exec++; else no++;
+      const dk = dateKeyPlusDays(baseKey, -i);
+      const row = data[dk]?.[u];
+
+      const restOk = isRestApproved(data, dk, u);
+      if(restOk){
+        restDays++;
+      }else{
+        if(hasAnyRecord(row)) exec++; else no++;
+      }
+
       for(const a of (row?.wordAttempts||[])){
         for(const o of (a.outcomes||[])){
           if(o==="한>영 불합격"||o==="영>한 불합격") wordFail++;
@@ -563,64 +870,191 @@ function renderWeekScreen(){
       patternFail += (row?.patternAttempts||[]).filter(p=>p.result==="불합격").length;
       if(row?.speakingTime==="30분 이하") speakUnder30++;
     }
-    el.innerHTML += `<div class="card"><b>${u}</b><br>실행 ${exec} / 미실행 ${no}<br>단어 불합격 체크 ${wordFail}개<br>패턴 불합격 ${patternFail}회<br>30분 이하 ${speakUnder30}회</div>`;
+    el.innerHTML += `
+      <div class="card">
+        <b>${u}</b><br>
+        실행 ${exec} / 미실행 ${no} / 휴무승인 ${restDays}<br>
+        단어 불합격 체크 ${wordFail}개<br>
+        패턴 불합격 ${patternFail}회<br>
+        30분 이하 ${speakUnder30}회
+      </div>`;
   });
 }
-function renderMonthScreen(){
-  const data = load();
+
+function renderFine4w(){
   const baseKey = basisDateKey();
-  const baseDate = new Date(baseKey);
-  const first = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
-  const last = baseDate;
-  const body = document.getElementById("monthBody");
-  body.innerHTML = `<div class="card"><h3 style="margin:0 0 6px;">월 벌금 통계</h3><div class="small">이번 달 1일 ~ 기준일까지</div></div>`;
+  const body = document.getElementById("fine4wBody");
+
+  body.innerHTML = "";
+
+  // 최근 28일 중 "마감 지난 날짜"만 확정 벌금 계산
   let totalAll = 0;
+  const perUser = {};
+
   USERS.forEach(u=>{
-    let fine=0;
-    for(let d=new Date(first); d<=last; d.setDate(d.getDate()+1)){
-      const key = d.toISOString().slice(0,10);
-      fine += calcDayFine(data[key]?.[u]);
+    let sum = 0;
+    for(let i=0;i<28;i++){
+      const dk = dateKeyPlusDays(baseKey, -i);
+      if(!isDateClosed(dk)) continue; // 마감 전 날짜는 확정 계산에서 제외
+      sum += calcFineForDate(dk, u);
     }
-    totalAll += fine;
-    body.innerHTML += `<div class="card"><b>${u}</b><br>총 벌금: <b>${fine.toLocaleString()}원</b></div>`;
+    perUser[u] = sum;
+    totalAll += sum;
+  });
+
+  USERS.forEach(u=>{
+    body.innerHTML += `<div class="card"><b>${u}</b><br>총 벌금: <b>${perUser[u].toLocaleString()}원</b></div>`;
   });
   body.innerHTML += `<div class="card"><b>전체 합계</b><br><b>${totalAll.toLocaleString()}원</b></div>`;
 }
-function resetAll(){
-  const txt = prompt("초기화하려면 '초기화' 입력");
-  if(txt !== "초기화") return;
-  localStorage.removeItem(KEY);
-  alert("초기화 완료");
-  renderAll();
+
+function renderAcc(){
+  const acc = loadAcc();
+  const el = document.getElementById("accBody");
+  let total = 0;
+
+  el.innerHTML = "";
+  USERS.forEach(u=>{
+    const mins = acc[u] || 0;
+    total += mins;
+    el.innerHTML += `
+      <div class="card">
+        <b>${u}</b><br>
+        누적 말하기훈련: <b>${formatMinutes(mins)}</b>
+      </div>
+    `;
+  });
+  el.innerHTML += `
+    <div class="card">
+      <b>전체 누적</b><br>
+      합계: <b>${formatMinutes(total)}</b>
+    </div>
+  `;
 }
 
 function renderAll(){
-  renderWordTodayList();
-  renderPatternTodayList();
-  renderSpeakingToday();
-  renderTodayFine();
-  renderTodayScreen();
-  renderWeekScreen();
-  renderMonthScreen();
+  if(!document.getElementById("app").classList.contains("hidden")){
+    renderWordTodayList();
+    renderPatternTodayList();
+    renderSpeakingToday();
+    renderTodayFine();
+    renderRestMyStatus();
+
+    renderTodayScreen();
+    renderWeekScreen();
+    renderFine4w();
+    renderAcc();
+  }
 }
 
-/* ===== 자동 로그인 처리 ===== */
+/* =========================================================
+   초기화 (비밀번호 20262026)
+   - studyData만 삭제
+   - 누적시간(KEY_ACC)은 유지
+========================================================= */
+function resetAll(){
+  const txt = prompt("전체 데이터를 초기화하려면 비밀번호를 입력하세요");
+  if(txt !== "20262026") return alert("비밀번호가 틀렸어요.");
+  localStorage.removeItem(KEY);
+  alert("초기화 완료 (누적시간은 유지됩니다)");
+  renderAll();
+}
+
+/* =========================================================
+   시작(로그인) + 웰컴 팝업(디자인)
+========================================================= */
+function showModal(title, body){
+  const root = document.getElementById("modalRoot");
+  root.classList.remove("hidden");
+  root.innerHTML = `
+    <div class="modalBack" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modalTop">
+          <h3>${escapeHtml(title)}</h3>
+        </div>
+        <div class="modalBody">
+          <div class="bigMsg">${escapeHtml(body)}</div>
+        </div>
+        <div class="modalActions">
+          <button class="primary" onclick="closeModal()">확인</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function showWelcome(){
+  const msg = "3년뒤 (설란·미진·미나) 야 너두!";
+  const sub = "오늘의 작은 기록이, 3년 뒤의 큰 실력으로 ✨";
+  const root = document.getElementById("modalRoot");
+  root.classList.remove("hidden");
+  root.innerHTML = `
+    <div class="modalBack" onclick="closeModal(event)">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modalTop">
+          <h3>🔥 스터디 시작!</h3>
+        </div>
+        <div class="modalBody">
+          <div class="bigMsg">${escapeHtml(msg)}</div>
+          <div class="subMsg">${escapeHtml(sub)}</div>
+        </div>
+        <div class="modalActions">
+          <button class="primary" onclick="closeModal()">가자!</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function closeModal(e){
+  const root = document.getElementById("modalRoot");
+  root.classList.add("hidden");
+  root.innerHTML = "";
+}
+function escapeHtml(s){
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+
+function startApp(){
+  const sel = document.getElementById("userSelect");
+  const rememberChk = document.getElementById("rememberMe");
+  const name = (sel?.value || "").trim();
+  if(!name) return showModal("이름 선택 필요", "이름을 선택한 뒤 시작을 눌러줘.");
+
+  if(rememberChk?.checked){
+    localStorage.setItem(LS_USER, name);
+    localStorage.setItem(LS_REMEMBER, "1");
+    delete window.__tempUser;
+  }else{
+    localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_REMEMBER);
+    window.__tempUser = name;
+  }
+
+  document.getElementById("nameScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+
+  showScreen("record");
+  showWelcome();
+  renderAll();
+}
+
+/* =========================================================
+   부팅
+========================================================= */
 function boot(){
   buildWordRanges();
   buildPatternDays();
 
-  // 자동 로그인: rememberMe가 켜져 있고, currentUser가 있으면
   if(remembered() && currentUser()){
     document.getElementById("nameScreen").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
     showScreen("record");
+    // 자동 로그인일 때도 환영 모달(원하면 빼도 됨)
+    showWelcome();
     renderAll();
   }else{
-    // 자동 로그인 안 함: 이름 선택 화면 유지
-    renderAll();
+    // 이름 선택 화면 유지
   }
 }
-
 document.addEventListener("DOMContentLoaded", boot);
 </script>
 
