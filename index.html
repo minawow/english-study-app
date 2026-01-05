@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>영어회화 스터디</title>
+  <style>
+    :root{
+      --main:#4f46e5; --bg:#f4f6fb; --card:#fff; --text:#1f2937;
+      --danger:#dc2626; --muted:#6b7280; --line:#e5e7eb;
+    }
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);}
+    header{background:var(--main);color:#fff;display:flex;justify-content:space-around;padding:12px 0;}
+    header button{background:none;border:none;color:#fff;font-size:14px;cursor:pointer;}
+    .container{padding:16px;}
+    .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
+    .hidden{display:none;}
+    .primary{background:var(--main);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;}
+    .sub{background:#eef2ff;border:1px solid #c7d2fe;padding:10px;border-radius:10px;width:100%;margin-bottom:8px;cursor:pointer;text-align:left;}
+    .sub.active{background:var(--main);color:#fff;border-color:var(--main);}
+    input,select{width:100%;padding:10px;margin-top:6px;border:1px solid var(--line);border-radius:10px;background:#fff;}
+    .danger{background:var(--danger);color:#fff;border:none;padding:8px 12px;border-radius:10px;cursor:pointer;}
+    .small{font-size:13px;color:var(--muted);}
+    .ok{color:green;font-weight:800;}
+    .no{color:red;font-weight:800;}
+    .row{display:flex;gap:10px;align-items:center;}
+    .row > *{flex:1;}
+    hr.sep{border:none;border-top:1px solid var(--line);margin:12px 0;}
+    .listItem{border-top:1px dashed var(--line);padding-top:10px;margin-top:10px;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .chk{display:flex;gap:10px;align-items:flex-start;margin-top:8px;}
+    .chk label{display:flex;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;}
+    .chk input{width:auto;margin:0;}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#f3f4f6;font-size:12px;color:#111;}
+    .note{padding:10px;border-radius:10px;background:#f9fafb;border:1px dashed var(--line);}
+    .kpi{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+    .kpi .big{font-size:22px;font-weight:900;}
+
+    /* 클릭 막힘 방지용 */
+    #nameScreen, #nameScreen * { pointer-events: auto; }
+  </style>
+</head>
+
+<body>
+
+<!-- 이름 선택 -->
+<div id="nameScreen" class="container">
+  <div class="card">
+    <h2 style="margin:0 0 10px;">이름 선택</h2>
+
+    <select id="userSelect">
+      <option value="">선택</option>
+      <option>오설란</option>
+      <option>오미진</option>
+      <option>김미나</option>
+    </select>
+
+    <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+      <input id="rememberMe" type="checkbox" style="width:auto; margin:0;">
+      <label for="rememberMe" class="small" style="margin:0; cursor:pointer;">
+        로그인 유지(체크하면 다음부터 자동 로그인)
+      </label>
+    </div>
+
+    <!-- ✅ 인라인 onclick: 이벤트리스너가 꼬여도 무조건 실행됨 -->
+    <button id="startBtn" class="primary" style="margin-top:10px;" onclick="startApp()">
+      시작
+    </button>
+
+    <p class="small" style="margin:10px 0 0;">
+      ※ 버튼 눌러도 반응이 없으면 파일 확장자/저장 방식 문제일 가능성이 높아요.
+    </p>
+
+    <div class="note small" style="margin-top:10px;">
+      <b>확인:</b> 이 파일 이름이 정말 <b>index.html</b>인지 확인해줘.<br>
+      (윈도우에서 확장자 숨김이면 <b>index.html.txt</b>로 저장돼도 모를 수 있어!)
+    </div>
+  </div>
+</div>
+
+<!-- 앱 -->
+<div id="app" class="hidden">
+  <header>
+    <button data-nav="record" onclick="showScreen('record')">오늘 기록</button>
+    <button data-nav="today" onclick="showScreen('today')">오늘 현황</button>
+    <button data-nav="week" onclick="showScreen('week')">4주 통계</button>
+    <button data-nav="month" onclick="showScreen('month')">월 벌금</button>
+  </header>
+
+  <div class="container">
+    <!-- 오늘 기록 -->
+    <div id="record" class="screen">
+      <div class="card">
+        <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
+        <div class="small">기준일: <span id="basisDate"></span> (새벽 3시 마감)</div>
+
+        <div class="note small" style="margin-top:10px;">
+          ✅ 오늘 기록이 1개라도 있으면 “공부한 날(⭕)”<br>
+          ❌ 오늘 아무 기록도 없으면 “접속 안함”으로 15,000원 확정
+        </div>
+
+        <hr class="sep">
+        <button class="sub" onclick="openSub('word', this)">A. 단어 1초 말하기</button>
+        <button class="sub" onclick="openSub('pattern', this)">B. 패턴시험</button>
+        <button class="sub" onclick="openSub('speaking', this)">C. 문장말하기훈련</button>
+
+        <!-- A -->
+        <div id="sub-word" class="card hidden" style="margin-top:12px;">
+          <p style="margin:0 0 8px;"><b>단어 1초 말하기</b></p>
+          <div class="small">번호 구간 선택 + 결과(복수 선택)</div>
+
+          <div style="margin-top:10px;">
+            <label class="small">단어 번호 구간 (50개 단위)</label>
+            <select id="wordRange"></select>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label class="small">결과 (여러 개 선택 가능)</label>
+            <div class="grid2 chk" id="wordOutcomeBox">
+              <label><input type="checkbox" value="한>영 합격">한>영 합격</label>
+              <label><input type="checkbox" value="한>영 불합격">한>영 불합격</label>
+              <label><input type="checkbox" value="영>한 합격">영>한 합격</label>
+              <label><input type="checkbox" value="영>한 불합격">영>한 불합격</label>
+            </div>
+            <p class="small" style="margin:8px 0 0;">벌금: 불합격 체크 1개당 <b>5,000원</b></p>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="primary" onclick="saveWord()">저장</button>
+            <button class="danger" onclick="clearWordSelections()">선택 초기화</button>
+          </div>
+
+          <div class="listItem">
+            <div class="small"><b>오늘 저장된 단어 기록</b></div>
+            <div id="todayWordItems" class="small" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- B -->
+        <div id="sub-pattern" class="card hidden" style="margin-top:12px;">
+          <p style="margin:0 0 8px;"><b>패턴시험</b></p>
+
+          <div style="margin-top:10px;">
+            <label class="small">Day 선택</label>
+            <select id="patternDay"></select>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label class="small">결과</label>
+            <select id="patternResult">
+              <option value="합격">합격</option>
+              <option value="불합격">불합격</option>
+            </select>
+            <p class="small" style="margin:8px 0 0;">벌금: 불합격이면 <b>5,000원</b></p>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="primary" onclick="savePattern()">저장</button>
+            <button class="danger" onclick="clearPatternInputs()">입력 초기화</button>
+          </div>
+
+          <div class="listItem">
+            <div class="small"><b>오늘 저장된 패턴 기록</b></div>
+            <div id="todayPatternItems" class="small" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- C -->
+        <div id="sub-speaking" class="card hidden" style="margin-top:12px;">
+          <p style="margin:0 0 8px;"><b>문장말하기훈련</b></p>
+
+          <div style="margin-top:10px;">
+            <label class="small">훈련 시간</label>
+            <select id="speakingTime">
+              <option value="">선택</option>
+              <option value="30분 이하">30분 이하</option>
+              <option value="30분">30분</option>
+              <option value="40분">40분</option>
+              <option value="50분">50분</option>
+              <option value="60분">60분</option>
+            </select>
+            <p class="small" style="margin:8px 0 0;">벌금: <b>30분 이하</b> 선택 시 <b>5,000원</b></p>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="primary" onclick="saveSpeaking()">저장</button>
+            <button class="danger" onclick="deleteSpeaking()">삭제</button>
+          </div>
+
+          <div class="listItem">
+            <div class="small"><b>오늘 저장된 문장말하기훈련</b></div>
+            <div id="todaySpeakingItem" class="small" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- 오늘 벌금 미리보기 -->
+        <div class="card" style="margin-top:12px;">
+          <div class="kpi">
+            <div>
+              <div class="small">오늘(기준일) 내 벌금</div>
+              <div id="todayFineBig" class="big">0원</div>
+            </div>
+            <div><span class="pill">자동 계산</span></div>
+          </div>
+          <div id="todayFineDetail" class="small" style="margin-top:10px;"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 오늘 현황 -->
+    <div id="today" class="screen hidden"></div>
+
+    <!-- 4주 통계 -->
+    <div id="week" class="screen hidden"></div>
+
+    <!-- 월 벌금 -->
+    <div id="month" class="screen hidden">
+      <div class="card">
+        <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
+        <p class="small" style="margin:10px 0 0;">※ 확인창에 ‘초기화’를 입력해야 실행됩니다.</p>
+      </div>
+      <div id="monthBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== 안전장치: 에러 있으면 바로 보여주기 ===== */
+window.addEventListener("error", (e)=> alert("JS 오류: " + (e.message || "unknown")));
+
+/* ===== 데이터/설정 ===== */
+const USERS = ["오설란","오미진","김미나"];
+const KEY = "studyData";
+const LS_USER = "currentUser";
+const LS_REMEMBER = "rememberMe";
+
+function basisDateKey(){
+  const d = new Date();
+  if(d.getHours() < 3) d.setDate(d.getDate()-1);
+  return d.toISOString().slice(0,10);
+}
+function load(){ return JSON.parse(localStorage.getItem(KEY)) || {}; }
+function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
+function remembered(){ return localStorage.getItem(LS_REMEMBER) === "1"; }
+function currentUser(){ return localStorage.getItem(LS_USER) || ""; }
+
+function ensureRow(data, dateKey, user){
+  data[dateKey] ??= {};
+  data[dateKey][user] ??= {};
+  data[dateKey][user].wordAttempts ??= [];
+  data[dateKey][user].patternAttempts ??= [];
+  return data[dateKey][user];
+}
+function hasAnyRecord(row){
+  if(!row) return false;
+  const hasWord = (row.wordAttempts || []).length > 0;
+  const hasPattern = (row.patternAttempts || []).length > 0;
+  const hasSpeaking = typeof row.speakingTime === "string" && row.speakingTime.length > 0;
+  return hasWord || hasPattern || hasSpeaking;
+}
+function calcDayFine(row){
+  if(!hasAnyRecord(row)) return 15000;
+  let fine = 0;
+  let wordFail = 0;
+  for(const a of (row.wordAttempts || [])){
+    for(const o of (a.outcomes || [])){
+      if(o === "한>영 불합격" || o === "영>한 불합격") wordFail++;
+    }
+  }
+  fine += wordFail * 5000;
+  fine += (row.patternAttempts || []).filter(p => p.result === "불합격").length * 5000;
+  if(row.speakingTime === "30분 이하") fine += 5000;
+  return fine;
+}
+
+/* ===== 화면 전환 ===== */
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  renderAll();
+}
+function openSub(subId, btnEl){
+  document.querySelectorAll(".sub").forEach(b=>b.classList.remove("active"));
+  if(btnEl) btnEl.classList.add("active");
+  document.querySelectorAll("[id^='sub-']").forEach(s=>s.classList.add("hidden"));
+  document.getElementById("sub-"+subId).classList.remove("hidden");
+}
+
+/* ===== 로그인(이름 선택) ===== */
+function startApp(){
+  // ✅ 클릭 자체가 되는지 확인용: 이 alert가 안 뜨면 “클릭이 막힌 것”
+  alert("시작 버튼 클릭됨 ✅");
+
+  const sel = document.getElementById("userSelect");
+  const rememberChk = document.getElementById("rememberMe");
+  const name = (sel?.value || "").trim();
+  if(!name) return alert("이름을 선택하세요.");
+
+  // 로그인 유지 체크에 따라 저장/비저장 처리
+  if(rememberChk?.checked){
+    localStorage.setItem(LS_USER, name);
+    localStorage.setItem(LS_REMEMBER, "1");
+  }else{
+    // 유지하지 않으면: 사용자 저장/유지 플래그 삭제 (매번 선택)
+    localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_REMEMBER);
+    // 대신 이번 실행 세션에서는 쓸 수 있게, window에만 저장
+    window.__tempUser = name;
+  }
+
+  // 화면 전환
+  document.getElementById("nameScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  showScreen("record");
+  renderAll();
+}
+
+// currentUser()가 비어있고, 유지 체크 안 했을 때는 임시 사용자 사용
+function getActiveUser(){
+  return currentUser() || window.__tempUser || "";
+}
+
+/* ===== 옵션 생성 ===== */
+function buildWordRanges(){
+  const sel = document.getElementById("wordRange");
+  sel.innerHTML = "";
+  for(let start=1; start<=1100; start+=50){
+    const end = Math.min(start+49, 1100);
+    const opt = document.createElement("option");
+    opt.value = `${start}-${end}`;
+    opt.textContent = `${start}-${end}번`;
+    sel.appendChild(opt);
+  }
+}
+function buildPatternDays(){
+  const sel = document.getElementById("patternDay");
+  sel.innerHTML = "";
+  for(let i=1;i<=20;i++){
+    const opt = document.createElement("option");
+    opt.value = `Day${i}`;
+    opt.textContent = `Day${i}`;
+    sel.appendChild(opt);
+  }
+  sel.value = "Day1";
+}
+
+/* ===== A 단어 ===== */
+function getSelectedWordOutcomes(){
+  return Array.from(document.querySelectorAll("#wordOutcomeBox input[type='checkbox']:checked")).map(x=>x.value);
+}
+function clearWordSelections(){
+  document.querySelectorAll("#wordOutcomeBox input[type='checkbox']").forEach(x=>x.checked=false);
+}
+function saveWord(){
+  const u = getActiveUser();
+  if(!u) return alert("이름부터 선택하고 들어와야 해요.");
+  const data = load();
+  const k = basisDateKey();
+  const row = ensureRow(data, k, u);
+
+  const range = document.getElementById("wordRange").value;
+  const outcomes = getSelectedWordOutcomes();
+  if(outcomes.length === 0) return alert("결과를 1개 이상 선택해줘.");
+
+  // 같은 구간 중복 저장 방지
+  if(row.wordAttempts.some(a => a.range === range)){
+    return alert("오늘은 이 구간이 이미 저장되어 있어요. (삭제 후 다시 저장 가능)");
+  }
+
+  row.wordAttempts.push({ range, outcomes, ts: Date.now() });
+  save(data);
+  clearWordSelections();
+  renderAll();
+}
+function deleteWord(range){
+  if(!confirm("삭제할까요?")) return;
+  const u = getActiveUser();
+  const data = load();
+  const k = basisDateKey();
+  const row = data[k]?.[u];
+  if(!row) return;
+  row.wordAttempts = (row.wordAttempts||[]).filter(a=>a.range !== range);
+  save(data);
+  renderAll();
+}
+
+/* ===== B 패턴 ===== */
+function savePattern(){
+  const u = getActiveUser();
+  if(!u) return alert("이름부터 선택하고 들어와야 해요.");
+  const data = load();
+  const k = basisDateKey();
+  const row = ensureRow(data, k, u);
+
+  const day = document.getElementById("patternDay").value;
+  const result = document.getElementById("patternResult").value;
+
+  if(row.patternAttempts.some(p => p.day === day)){
+    return alert("오늘은 이 Day가 이미 저장되어 있어요. (삭제 후 다시 저장 가능)");
+  }
+
+  row.patternAttempts.push({ day, result, ts: Date.now() });
+  save(data);
+  renderAll();
+}
+function deletePattern(day){
+  if(!confirm("삭제할까요?")) return;
+  const u = getActiveUser();
+  const data = load();
+  const k = basisDateKey();
+  const row = data[k]?.[u];
+  if(!row) return;
+  row.patternAttempts = (row.patternAttempts||[]).filter(p=>p.day !== day);
+  save(data);
+  renderAll();
+}
+function clearPatternInputs(){
+  document.getElementById("patternDay").value = "Day1";
+  document.getElementById("patternResult").value = "합격";
+}
+
+/* ===== C 문장말하기 ===== */
+function saveSpeaking(){
+  const u = getActiveUser();
+  if(!u) return alert("이름부터 선택하고 들어와야 해요.");
+  const data = load();
+  const k = basisDateKey();
+  const row = ensureRow(data, k, u);
+
+  const t = document.getElementById("speakingTime").value;
+  if(!t) return alert("시간을 선택해줘.");
+  if(row.speakingTime) return alert("오늘은 이미 저장되어 있어요. (삭제 후 다시 저장)");
+
+  row.speakingTime = t;
+  save(data);
+  renderAll();
+}
+function deleteSpeaking(){
+  if(!confirm("삭제할까요?")) return;
+  const u = getActiveUser();
+  const data = load();
+  const k = basisDateKey();
+  const row = data[k]?.[u];
+  if(!row) return;
+  delete row.speakingTime;
+  save(data);
+  renderAll();
+}
+
+/* ===== 렌더 ===== */
+function renderWordTodayList(){
+  const el = document.getElementById("todayWordItems");
+  const u = getActiveUser();
+  const data = load();
+  const k = basisDateKey();
+  const arr = data[k]?.[u]?.wordAttempts || [];
+  if(arr.length === 0){ el.innerHTML = `<span class="pill">없음</span>`; return; }
+  el.innerHTML = arr.map(a=>{
+    const fails = (a.outcomes||[]).filter(o=>o==="한>영 불합격"||o==="영>한 불합격").length;
+    const fine = fails*5000;
+    return `
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-top:10px;">
+        <div>
+          <b>${a.range}번</b>
+          <span class="pill" style="margin-left:6px;background:${fails? "#fee2e2":"#dcfce7"};color:${fails? "#991b1b":"#166534"};">
+            ${fails? `불합격 ${fails}개 / ${fine.toLocaleString()}원` : "불합격 없음"}
+          </span><br>
+          <span class="small">${(a.outcomes||[]).join(", ")}</span>
+        </div>
+        <button class="danger" style="padding:6px 10px;" onclick="deleteWord('${a.range}')">삭제</button>
+      </div>
+    `;
+  }).join("");
+}
+function renderPatternTodayList(){
+  const el = document.getElementById("todayPatternItems");
+  const u = getActiveUser();
+  const data = load();
+  const k = basisDateKey();
+  const arr = data[k]?.[u]?.patternAttempts || [];
+  if(arr.length === 0){ el.innerHTML = `<span class="pill">없음</span>`; return; }
+  el.innerHTML = arr.map(p=>{
+    const fine = (p.result==="불합격") ? 5000 : 0;
+    return `
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
+        <div><b>${p.day}</b> <span class="pill" style="background:${fine? "#fee2e2":"#dcfce7"};color:${fine? "#991b1b":"#166534"};">${p.result}${fine? ` / ${fine.toLocaleString()}원`:""}</span></div>
+        <button class="danger" style="padding:6px 10px;" onclick="deletePattern('${p.day}')">삭제</button>
+      </div>
+    `;
+  }).join("");
+}
+function renderSpeakingToday(){
+  const el = document.getElementById("todaySpeakingItem");
+  const u = getActiveUser();
+  const data = load();
+  const k = basisDateKey();
+  const t = data[k]?.[u]?.speakingTime || "";
+  if(!t){ el.innerHTML = `<span class="pill">없음</span>`; return; }
+  const fine = (t==="30분 이하") ? 5000 : 0;
+  el.innerHTML = `<span class="pill" style="background:${fine? "#fee2e2":"#dcfce7"};color:${fine? "#991b1b":"#166534"};">${t}${fine? ` / ${fine.toLocaleString()}원`:" / 벌금 없음"}</span>`;
+}
+
+function renderTodayFine(){
+  const u = getActiveUser();
+  const data = load();
+  const k = basisDateKey();
+  const row = data[k]?.[u];
+  const fine = calcDayFine(row);
+  document.getElementById("basisDate").textContent = k;
+  document.getElementById("todayFineBig").textContent = fine.toLocaleString() + "원";
+
+  const detail = document.getElementById("todayFineDetail");
+  if(!hasAnyRecord(row)){
+    detail.innerHTML = `오늘 기록 0개 → <b>접속 안함 15,000원</b>`;
+    return;
+  }
+  let wordFail=0;
+  for(const a of (row.wordAttempts||[])){
+    for(const o of (a.outcomes||[])){
+      if(o==="한>영 불합격"||o==="영>한 불합격") wordFail++;
+    }
+  }
+  const patternFail=(row.patternAttempts||[]).filter(p=>p.result==="불합격").length;
+  const speakUnder30=(row.speakingTime==="30분 이하");
+  detail.innerHTML =
+    `단어 불합격 체크 ${wordFail}개 → ${(wordFail*5000).toLocaleString()}원<br>` +
+    `패턴 불합격 ${patternFail}회 → ${(patternFail*5000).toLocaleString()}원<br>` +
+    `문장말하기 30분 이하 ${speakUnder30?"예":"아니오"} → ${(speakUnder30?5000:0).toLocaleString()}원`;
+}
+
+/* 오늘/주/월 화면은 기존처럼 유지(요약 구현) */
+function renderTodayScreen(){
+  const data = load();
+  const k = basisDateKey();
+  const el = document.getElementById("today");
+  el.innerHTML = `<div class="card"><h3 style="margin:0 0 6px;">오늘 현황</h3><div class="small">${k} 기준</div></div>`;
+  USERS.forEach(u=>{
+    const ok = hasAnyRecord(data[k]?.[u]);
+    el.innerHTML += `<div class="card"><b>${u}</b><br><span class="${ok?"ok":"no"}">${ok?"⭕ 기록 있음":"❌ 기록 없음"}</span></div>`;
+  });
+}
+function dateKeyPlusDays(isoKey,delta){
+  const d = new Date(isoKey); d.setDate(d.getDate()+delta);
+  return d.toISOString().slice(0,10);
+}
+function renderWeekScreen(){
+  const data = load();
+  const baseKey = basisDateKey();
+  const el = document.getElementById("week");
+  el.innerHTML = `<div class="card"><h3 style="margin:0 0 6px;">4주 통계</h3><div class="small">최근 28일</div></div>`;
+  USERS.forEach(u=>{
+    let exec=0,no=0,wordFail=0,patternFail=0,speakUnder30=0;
+    for(let i=0;i<28;i++){
+      const k = dateKeyPlusDays(baseKey, -i);
+      const row = data[k]?.[u];
+      if(hasAnyRecord(row)) exec++; else no++;
+      for(const a of (row?.wordAttempts||[])){
+        for(const o of (a.outcomes||[])){
+          if(o==="한>영 불합격"||o==="영>한 불합격") wordFail++;
+        }
+      }
+      patternFail += (row?.patternAttempts||[]).filter(p=>p.result==="불합격").length;
+      if(row?.speakingTime==="30분 이하") speakUnder30++;
+    }
+    el.innerHTML += `<div class="card"><b>${u}</b><br>실행 ${exec} / 미실행 ${no}<br>단어 불합격 체크 ${wordFail}개<br>패턴 불합격 ${patternFail}회<br>30분 이하 ${speakUnder30}회</div>`;
+  });
+}
+function renderMonthScreen(){
+  const data = load();
+  const baseKey = basisDateKey();
+  const baseDate = new Date(baseKey);
+  const first = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+  const last = baseDate;
+  const body = document.getElementById("monthBody");
+  body.innerHTML = `<div class="card"><h3 style="margin:0 0 6px;">월 벌금 통계</h3><div class="small">이번 달 1일 ~ 기준일까지</div></div>`;
+  let totalAll = 0;
+  USERS.forEach(u=>{
+    let fine=0;
+    for(let d=new Date(first); d<=last; d.setDate(d.getDate()+1)){
+      const key = d.toISOString().slice(0,10);
+      fine += calcDayFine(data[key]?.[u]);
+    }
+    totalAll += fine;
+    body.innerHTML += `<div class="card"><b>${u}</b><br>총 벌금: <b>${fine.toLocaleString()}원</b></div>`;
+  });
+  body.innerHTML += `<div class="card"><b>전체 합계</b><br><b>${totalAll.toLocaleString()}원</b></div>`;
+}
+function resetAll(){
+  const txt = prompt("초기화하려면 '초기화' 입력");
+  if(txt !== "초기화") return;
+  localStorage.removeItem(KEY);
+  alert("초기화 완료");
+  renderAll();
+}
+
+function renderAll(){
+  renderWordTodayList();
+  renderPatternTodayList();
+  renderSpeakingToday();
+  renderTodayFine();
+  renderTodayScreen();
+  renderWeekScreen();
+  renderMonthScreen();
+}
+
+/* ===== 자동 로그인 처리 ===== */
+function boot(){
+  buildWordRanges();
+  buildPatternDays();
+
+  // 자동 로그인: rememberMe가 켜져 있고, currentUser가 있으면
+  if(remembered() && currentUser()){
+    document.getElementById("nameScreen").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    showScreen("record");
+    renderAll();
+  }else{
+    // 자동 로그인 안 함: 이름 선택 화면 유지
+    renderAll();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", boot);
+</script>
+
+</body>
+</html>
