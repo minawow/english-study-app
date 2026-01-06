@@ -55,6 +55,10 @@
       .chkGrid label{font-size:13px;padding:9px;}
     }
 
+    /* ✅ 저장/삭제 버튼을 문장말하기훈련처럼 세로로 크게 */
+    .btnStack{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+    .btnStack button{width:100%;padding:14px 14px;font-size:16px;border-radius:14px;}
+
     /* 모달 */
     .modalBack{
       position:fixed;inset:0;background:rgba(0,0,0,.38);
@@ -345,6 +349,21 @@ function deleteWord(range){
   renderAll();
 }
 
+/* ✅ 문장말하기훈련처럼 “빨간 삭제 버튼”을 단어시험에도 적용: 선택된 구간 삭제 */
+function deleteSelectedWord(){
+  const u = getActiveUser();
+  if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
+
+  const range = document.getElementById("wordRange").value;
+  const data = load();
+  const k = todayKey();
+  const row = data[k]?.[u];
+  if(!row || !(row.wordAttempts||[]).some(a=>a.range===range)){
+    return showModal("삭제할 기록 없음", `오늘 저장된 "${range}번" 기록이 없어요.`);
+  }
+  deleteWord(range);
+}
+
 /** ===== 패턴 ===== */
 function savePattern(){
   const u = getActiveUser();
@@ -376,16 +395,26 @@ function deletePattern(day){
   save(data);
   renderAll();
 }
-function clearPatternInputs(){
-  document.getElementById("patternDay").value = "Day1";
-  document.getElementById("patternResult").value = "합격";
+
+/* ✅ 문장말하기훈련처럼 “빨간 삭제 버튼”을 패턴시험에도 적용: 선택된 Day 삭제 */
+function deleteSelectedPattern(){
+  const u = getActiveUser();
+  if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
+
+  const day = document.getElementById("patternDay").value;
+  const data = load();
+  const k = todayKey();
+  const row = data[k]?.[u];
+  if(!row || !(row.patternAttempts||[]).some(p=>p.day===day)){
+    return showModal("삭제할 기록 없음", `오늘 저장된 "${day}" 기록이 없어요.`);
+  }
+  deletePattern(day);
 }
 
 /** ===== 말하기 =====
- * ✅ 수정 포인트:
  * - 이미 저장된 시간이 있으면 "수정 저장"으로 처리
  *   → 누적에서 이전 시간 빼고, 새 시간 더함
- * - 삭제 버튼은 그대로 누적에서 빼고 speakingTime 삭제
+ * - 삭제 버튼은 누적에서 빼고 speakingTime 삭제
  */
 function saveSpeaking(){
   const u = getActiveUser();
@@ -398,7 +427,7 @@ function saveSpeaking(){
   const t = document.getElementById("speakingTime").value;
   if(!t) return showModal("시간 선택 필요", "훈련 시간을 선택해줘.");
 
-  // ✅ 이미 저장되어 있으면 "수정"으로 처리(누적에서 old 빼고 new 더함)
+  // 이미 저장되어 있으면 "수정" 처리
   if(row.speakingTime){
     const old = row.speakingTime;
     if(old === t){
@@ -412,7 +441,7 @@ function saveSpeaking(){
     return;
   }
 
-  // ✅ 처음 저장
+  // 처음 저장
   row.speakingTime = t;
   save(data);
   addAcc(u, timeToMinutes(t));
@@ -431,7 +460,6 @@ function deleteSpeaking(){
   delete row.speakingTime;
   save(data);
 
-  // 선택 UI도 깔끔하게 "선택"으로 돌리고 싶다면(기존 동작에는 영향 없음)
   const sel = document.getElementById("speakingTime");
   if(sel) sel.value = "";
 
@@ -450,15 +478,12 @@ function renderWordTodayList(){
     const fails = (a.outcomes||[]).filter(o=>o==="한>영 불합격"||o==="영>한 불합격").length;
     const fine = fails*5000;
     return `
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-top:10px;">
-        <div>
-          <b>${a.range}번</b>
-          <span class="pill" style="margin-left:6px;background:${fails? "#fee2e2":"#dcfce7"};color:${fails? "#991b1b":"#166534"};">
-            ${fails? `불합격 ${fails}개 / ${fine.toLocaleString()}원` : "불합격 없음"}
-          </span><br>
-          <span class="small">${(a.outcomes||[]).join(", ")}</span>
-        </div>
-        <button class="danger" style="padding:8px 10px;" onclick="deleteWord('${a.range}')">삭제</button>
+      <div style="margin-top:10px;">
+        <b>${a.range}번</b>
+        <span class="pill" style="margin-left:6px;background:${fails? "#fee2e2":"#dcfce7"};color:${fails? "#991b1b":"#166534"};">
+          ${fails? `불합격 ${fails}개 / ${fine.toLocaleString()}원` : "불합격 없음"}
+        </span><br>
+        <span class="small">${(a.outcomes||[]).join(", ")}</span>
       </div>
     `;
   }).join("");
@@ -473,13 +498,11 @@ function renderPatternTodayList(){
   el.innerHTML = arr.map(p=>{
     const fine = (p.result==="불합격") ? 5000 : 0;
     return `
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;">
-        <div><b>${p.day}</b>
-          <span class="pill" style="background:${fine? "#fee2e2":"#dcfce7"};color:${fine? "#991b1b":"#166534"};">
-            ${p.result}${fine? ` / ${fine.toLocaleString()}원`:""}
-          </span>
-        </div>
-        <button class="danger" style="padding:8px 10px;" onclick="deletePattern('${p.day}')">삭제</button>
+      <div style="margin-top:10px;">
+        <b>${p.day}</b>
+        <span class="pill" style="margin-left:6px;background:${fine? "#fee2e2":"#dcfce7"};color:${fine? "#991b1b":"#166534"};">
+          ${p.result}${fine? ` / ${fine.toLocaleString()}원`:""}
+        </span>
       </div>
     `;
   }).join("");
@@ -617,7 +640,7 @@ function renderTodayScreen(){
   });
 }
 
-/** ✅ 4주 벌금(28일) 집계: iOS에서도 날짜키 매칭되게 + data 한 번만 로드 */
+/** ✅ 4주 벌금(28일) 집계 */
 function renderFine4w(){
   const baseKey = todayKey();
   const body = document.getElementById("fine4wBody");
@@ -891,9 +914,10 @@ document.addEventListener("DOMContentLoaded", boot);
             <p class="small" style="margin:8px 0 0;">벌금: <b>불합격 체크 1개당 5,000원</b></p>
           </div>
 
-          <div class="row" style="margin-top:12px;">
+          <!-- ✅ 문장말하기훈련처럼: 저장 + 삭제(선택된 구간 삭제) -->
+          <div class="btnStack">
             <button class="primary" onclick="saveWord()">저장</button>
-            <button class="ghost" onclick="clearWordSelections()">선택 초기화</button>
+            <button class="danger" onclick="deleteSelectedWord()">삭제</button>
           </div>
 
           <div class="listItem">
@@ -920,9 +944,10 @@ document.addEventListener("DOMContentLoaded", boot);
             <p class="small" style="margin:8px 0 0;">벌금: 불합격이면 <b>5,000원</b></p>
           </div>
 
-          <div class="row" style="margin-top:12px;">
+          <!-- ✅ 문장말하기훈련처럼: 저장 + 삭제(선택된 Day 삭제) -->
+          <div class="btnStack">
             <button class="primary" onclick="savePattern()">저장</button>
-            <button class="ghost" onclick="clearPatternInputs()">입력 초기화</button>
+            <button class="danger" onclick="deleteSelectedPattern()">삭제</button>
           </div>
 
           <div class="listItem">
@@ -951,7 +976,7 @@ document.addEventListener("DOMContentLoaded", boot);
             <p class="small" style="margin:8px 0 0;">벌금: <b>30분 이하</b> 선택 시 <b>5,000원</b></p>
           </div>
 
-          <div class="row" style="margin-top:12px;">
+          <div class="btnStack">
             <button class="primary" onclick="saveSpeaking()">저장</button>
             <button class="danger" onclick="deleteSpeaking()">삭제</button>
           </div>
