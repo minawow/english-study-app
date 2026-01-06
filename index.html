@@ -381,7 +381,12 @@ function clearPatternInputs(){
   document.getElementById("patternResult").value = "합격";
 }
 
-/** ===== 말하기 ===== */
+/** ===== 말하기 =====
+ * ✅ 수정 포인트:
+ * - 이미 저장된 시간이 있으면 "수정 저장"으로 처리
+ *   → 누적에서 이전 시간 빼고, 새 시간 더함
+ * - 삭제 버튼은 그대로 누적에서 빼고 speakingTime 삭제
+ */
 function saveSpeaking(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
@@ -392,14 +397,28 @@ function saveSpeaking(){
 
   const t = document.getElementById("speakingTime").value;
   if(!t) return showModal("시간 선택 필요", "훈련 시간을 선택해줘.");
-  if(row.speakingTime) return showModal("중복 저장 방지", "오늘은 이미 저장되어 있어요. (삭제 후 다시 저장)");
 
+  // ✅ 이미 저장되어 있으면 "수정"으로 처리(누적에서 old 빼고 new 더함)
+  if(row.speakingTime){
+    const old = row.speakingTime;
+    if(old === t){
+      return showModal("이미 저장됨", "오늘은 같은 시간으로 이미 저장되어 있어요.");
+    }
+    subAcc(u, timeToMinutes(old));
+    addAcc(u, timeToMinutes(t));
+    row.speakingTime = t;
+    save(data);
+    renderAll();
+    return;
+  }
+
+  // ✅ 처음 저장
   row.speakingTime = t;
   save(data);
-
   addAcc(u, timeToMinutes(t));
   renderAll();
 }
+
 function deleteSpeaking(){
   if(!confirm("삭제할까요? (누적시간도 함께 되돌립니다)")) return;
   const u = getActiveUser();
@@ -411,6 +430,11 @@ function deleteSpeaking(){
   subAcc(u, timeToMinutes(row.speakingTime));
   delete row.speakingTime;
   save(data);
+
+  // 선택 UI도 깔끔하게 "선택"으로 돌리고 싶다면(기존 동작에는 영향 없음)
+  const sel = document.getElementById("speakingTime");
+  if(sel) sel.value = "";
+
   renderAll();
 }
 
