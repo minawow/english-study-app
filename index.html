@@ -12,7 +12,7 @@
     }
     *{box-sizing:border-box;}
     body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);}
-    header{background:var(--main);color:#fff;display:flex;justify-content:space-around;padding:12px 0;position:sticky;top:0;z-index:5;}
+    header{background:var(--main);color:#fff;display:flex;justify-content:space-around;padding:12px 0;position:sticky;top:0;z-index:5;flex-wrap:wrap;gap:6px;}
     header button{background:none;border:none;color:#fff;font-size:14px;cursor:pointer;padding:8px 10px;border-radius:10px;}
     header button.active{background:rgba(255,255,255,.18);}
     .container{padding:16px;max-width:980px;margin:0 auto;}
@@ -46,14 +46,13 @@
     .chkGrid label{
       display:flex;gap:8px;align-items:center;
       padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;
-      min-width:0; /* 줄바꿈 허용 */
+      min-width:0;
       font-size:14px;
     }
     .chkGrid input{width:auto;margin:0;flex:none;}
     @media (max-width:520px){
-      .chkGrid{max-width:80vw;} /* 요청: 5분의4 정도 */
+      .chkGrid{max-width:80vw;}
       .chkGrid label{font-size:13px;padding:9px;}
-      header{gap:6px;flex-wrap:wrap;}
     }
 
     /* 모달 */
@@ -70,9 +69,7 @@
       transform:translateY(10px) scale(.98);
       animation:pop .18s ease-out forwards;
     }
-    @keyframes pop{
-      to{transform:translateY(0) scale(1);}
-    }
+    @keyframes pop{ to{transform:translateY(0) scale(1);} }
     .modalTop{
       padding:18px 18px 12px;
       background:linear-gradient(135deg,#4f46e5,#7c3aed);
@@ -127,11 +124,12 @@
     <div id="record" class="screen">
       <div class="card">
         <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
-        <div class="small">기준일: <span id="basisDate"></span> (마감: 다음날 새벽 3시)</div>
+        <div class="small">기준일: <span id="basisDate"></span> (휴대폰 날짜 기준)</div>
 
         <div class="note small" style="margin-top:10px;">
           ✅ 오늘 기록이 1개라도 있으면 “공부한 날(⭕)”<br>
-          ❌ 오늘 아무 기록이 없으면 “접속 안 함”으로 벌금 <b>15,000원</b> 확정(마감 후)
+          ❌ 오늘 기록이 없으면 “기록 없음(❌)”으로 표시됩니다.<br>
+          ※ 기록이 없다고 자동 벌금이 쌓이지 않아요. (0원부터 시작)
         </div>
 
         <hr class="sep">
@@ -235,7 +233,7 @@
         <div class="card" style="margin-top:12px;">
           <div class="kpi">
             <div>
-              <div class="small">오늘(기준일) 내 벌금 (마감 전에는 “예상”)</div>
+              <div class="small">오늘(기준일) 내 벌금</div>
               <div id="todayFineBig" class="big">0원</div>
             </div>
             <div><span class="pill">자동 계산</span></div>
@@ -243,7 +241,7 @@
           <div id="todayFineDetail" class="small" style="margin-top:10px;"></div>
         </div>
 
-        <!-- 휴무 요청 버튼(첫 화면 맨 아래) -->
+        <!-- 휴무 요청 버튼 -->
         <div class="card" style="margin-top:12px;">
           <div class="small"><b>특별 기능</b> — 오늘 쉬고 싶다면?</div>
           <div class="small" style="margin-top:6px;">“오늘은 나 쉴게!”를 누르면, 나머지 두 사람이 모두 승인해야 오늘 벌금이 스킵돼요.</div>
@@ -268,11 +266,10 @@
         <div class="row" style="align-items:flex-start;">
           <div>
             <h3 style="margin:0 0 6px;">4주 벌금</h3>
-            <div class="small">최근 28일(마감 지난 날짜만 확정 계산)</div>
+            <div class="small">최근 28일(기록 기반으로만 계산)</div>
           </div>
           <div style="text-align:right;">
             <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
-            <div class="small" style="margin-top:6px;">비밀번호: <b>20262026</b></div>
           </div>
         </div>
       </div>
@@ -307,32 +304,24 @@ const LS_REMEMBER = "rememberMe";
 const KEY_ACC = "accSpeakingMinutes";    // 누적시간(초기화해도 유지)
 
 /* =========================================================
-   날짜/마감 로직
-   - "오늘 기록 가능" 기준일: 새벽 3시 이전이면 전날이 기준일
-   - 벌금 확정은 "마감 지난 날짜"만 계산(미리 15,000 쌓이는 버그 방지)
+   날짜 로직 (요청 반영)
+   - 휴대폰 날짜 그대로 사용
+   - 새벽 3시 마감/잠금/전날 잠김 모두 삭제
 ========================================================= */
-function basisDateKey(){
+function todayKey(){
   const d = new Date();
-  if(d.getHours() < 3) d.setDate(d.getDate()-1);
   return d.toISOString().slice(0,10);
 }
 function dateKeyPlusDays(isoKey,delta){
-  const d = new Date(isoKey); d.setDate(d.getDate()+delta);
+  const d = new Date(isoKey + "T00:00:00");
+  d.setDate(d.getDate()+delta);
   return d.toISOString().slice(0,10);
-}
-function isDateClosed(dateKey){
-  // dateKey(YYYY-MM-DD)의 기록 마감: 다음날 03:00 이후
-  const d = new Date(dateKey + "T00:00:00");
-  d.setDate(d.getDate()+1);
-  d.setHours(3,0,0,0);
-  return Date.now() >= d.getTime();
 }
 
 function load(){ return JSON.parse(localStorage.getItem(KEY)) || {}; }
 function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
 function remembered(){ return localStorage.getItem(LS_REMEMBER) === "1"; }
 function currentUser(){ return localStorage.getItem(LS_USER) || ""; }
-
 // remember 체크 안 한 세션용
 function getActiveUser(){ return currentUser() || window.__tempUser || ""; }
 
@@ -353,13 +342,11 @@ function hasAnyRecord(row){
 
 /* =========================================================
    휴무(쉬기) 요청 로직
-   - 오늘(기준일)만 가능
-   - 요청자 + 나머지 두 명 모두 승인 시 벌금 스킵
+   - 오늘(휴대폰 날짜)만
 ========================================================= */
 function ensureRestObj(data, dateKey){
   data[dateKey] ??= {};
-  data[dateKey].__rest ??= {}; // 날짜 공용 휴무 요청들
-  // 구조: data[dateKey].__rest[requester] = { requester, approvals:[], status:"pending|approved" }
+  data[dateKey].__rest ??= {};
   return data[dateKey].__rest;
 }
 function getRestState(data, dateKey, requester){
@@ -369,17 +356,14 @@ function isRestApproved(data, dateKey, requester){
   const s = getRestState(data, dateKey, requester);
   return !!(s && s.status === "approved");
 }
-
 function requestRest(){
   const u = getActiveUser();
   if(!u) return showModal("이름을 먼저 선택해주세요", "이름 선택 후 이용할 수 있어요.");
-  const k = basisDateKey();
+
+  const k = todayKey();
   const data = load();
   const rest = ensureRestObj(data, k);
 
-  if(isDateClosed(k)){
-    return showModal("마감 후에는 휴무 요청이 불가해요", "오늘(기준일) 마감 전까지만 요청할 수 있어요.");
-  }
   if(rest[u]?.status === "approved"){
     return showModal("이미 휴무 승인 완료!", "오늘 벌금은 스킵됩니다 😴");
   }
@@ -392,10 +376,9 @@ function requestRest(){
   renderAll();
   showModal("휴무 요청 완료", "다른 두 사람이 ‘승인’하면 오늘 벌금이 스킵돼요.");
 }
-
 function approveRest(requester){
   const me = getActiveUser();
-  const k = basisDateKey();
+  const k = todayKey();
   const data = load();
   const rest = ensureRestObj(data, k);
   const state = rest[requester];
@@ -407,7 +390,6 @@ function approveRest(requester){
   }
   if(!state.approvals.includes(me)) state.approvals.push(me);
 
-  // 승인 조건: 나머지 2명 모두 승인
   const needed = USERS.filter(x => x !== requester);
   const ok = needed.every(x => state.approvals.includes(x));
   if(ok) state.status = "approved";
@@ -418,9 +400,8 @@ function approveRest(requester){
 }
 
 /* =========================================================
-   벌금 계산
-   규칙:
-   - 기록 0개면(접속 안함) 15,000원 (단, 마감 지난 날짜만 확정)
+   벌금 계산 (요청 반영)
+   - 기록이 없으면 벌금 0원 (자동 누적 제거)
    - 단어: 한>영 불합격, 영>한 불합격 체크 1개당 5,000원
    - 패턴: 불합격 5,000원
    - 문장: 30분 이하 5,000원
@@ -428,17 +409,10 @@ function approveRest(requester){
 ========================================================= */
 function calcFineForDate(dateKey, user){
   const data = load();
-  // 휴무 승인 시 벌금 스킵
   if(isRestApproved(data, dateKey, user)) return 0;
 
   const row = data[dateKey]?.[user];
-  const has = hasAnyRecord(row);
-
-  // 마감이 안 지난 날짜(오늘 진행중)는 "접속 안함 15000"을 확정하지 않음
-  // => 0 기록이어도 아직 기회 있음
-  if(!isDateClosed(dateKey) && !has) return 0;
-
-  if(!has) return 15000;
+  if(!hasAnyRecord(row)) return 0; // ★ 자동 벌금 없음
 
   let fine = 0;
   let wordFail = 0;
@@ -508,6 +482,7 @@ function openSub(subId, btnEl){
 
 /* =========================================================
    단어/패턴/문장 저장
+   - 날짜 잠금 없음 (요청 반영)
 ========================================================= */
 function buildWordRanges(){
   const sel = document.getElementById("wordRange");
@@ -537,12 +512,12 @@ function getSelectedWordOutcomes(){
 function clearWordSelections(){
   document.querySelectorAll("#wordOutcomeBox input[type='checkbox']").forEach(x=>x.checked=false);
 }
+
 function saveWord(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
-  const k = basisDateKey();
-  if(isDateClosed(k)) return showModal("마감 후 저장 불가", "새벽 3시 이후에는 전날 기록이 잠깁니다.");
 
+  const k = todayKey();
   const data = load();
   const row = ensureRow(data, k, u);
 
@@ -563,19 +538,19 @@ function deleteWord(range){
   if(!confirm("삭제할까요?")) return;
   const u = getActiveUser();
   const data = load();
-  const k = basisDateKey();
+  const k = todayKey();
   const row = data[k]?.[u];
   if(!row) return;
   row.wordAttempts = (row.wordAttempts||[]).filter(a=>a.range !== range);
   save(data);
   renderAll();
 }
+
 function savePattern(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
-  const k = basisDateKey();
-  if(isDateClosed(k)) return showModal("마감 후 저장 불가", "새벽 3시 이후에는 전날 기록이 잠깁니다.");
 
+  const k = todayKey();
   const data = load();
   const row = ensureRow(data, k, u);
 
@@ -594,7 +569,7 @@ function deletePattern(day){
   if(!confirm("삭제할까요?")) return;
   const u = getActiveUser();
   const data = load();
-  const k = basisDateKey();
+  const k = todayKey();
   const row = data[k]?.[u];
   if(!row) return;
   row.patternAttempts = (row.patternAttempts||[]).filter(p=>p.day !== day);
@@ -605,12 +580,12 @@ function clearPatternInputs(){
   document.getElementById("patternDay").value = "Day1";
   document.getElementById("patternResult").value = "합격";
 }
+
 function saveSpeaking(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
-  const k = basisDateKey();
-  if(isDateClosed(k)) return showModal("마감 후 저장 불가", "새벽 3시 이후에는 전날 기록이 잠깁니다.");
 
+  const k = todayKey();
   const data = load();
   const row = ensureRow(data, k, u);
 
@@ -621,20 +596,17 @@ function saveSpeaking(){
   row.speakingTime = t;
   save(data);
 
-  // 누적시간 반영(초기화해도 유지)
   addAcc(u, timeToMinutes(t));
-
   renderAll();
 }
 function deleteSpeaking(){
   if(!confirm("삭제할까요? (누적시간도 함께 되돌립니다)")) return;
   const u = getActiveUser();
   const data = load();
-  const k = basisDateKey();
+  const k = todayKey();
   const row = data[k]?.[u];
   if(!row || !row.speakingTime) return;
 
-  // 누적시간 되돌리기
   subAcc(u, timeToMinutes(row.speakingTime));
 
   delete row.speakingTime;
@@ -645,19 +617,11 @@ function deleteSpeaking(){
 /* =========================================================
    렌더링
 ========================================================= */
-function formatMinutes(mins){
-  const h = Math.floor(mins/60);
-  const m = mins % 60;
-  if(h<=0) return `${m}분`;
-  if(m===0) return `${h}시간`;
-  return `${h}시간 ${m}분`;
-}
-
 function renderWordTodayList(){
   const el = document.getElementById("todayWordItems");
   const u = getActiveUser();
   const data = load();
-  const k = basisDateKey();
+  const k = todayKey();
   const arr = data[k]?.[u]?.wordAttempts || [];
   if(arr.length === 0){ el.innerHTML = `<span class="pill">없음</span>`; return; }
   el.innerHTML = arr.map(a=>{
@@ -682,7 +646,7 @@ function renderPatternTodayList(){
   const el = document.getElementById("todayPatternItems");
   const u = getActiveUser();
   const data = load();
-  const k = basisDateKey();
+  const k = todayKey();
   const arr = data[k]?.[u]?.patternAttempts || [];
   if(arr.length === 0){ el.innerHTML = `<span class="pill">없음</span>`; return; }
   el.innerHTML = arr.map(p=>{
@@ -704,7 +668,7 @@ function renderSpeakingToday(){
   const el = document.getElementById("todaySpeakingItem");
   const u = getActiveUser();
   const data = load();
-  const k = basisDateKey();
+  const k = todayKey();
   const t = data[k]?.[u]?.speakingTime || "";
   if(!t){ el.innerHTML = `<span class="pill">없음</span>`; return; }
   const fine = (t==="30분 이하") ? 5000 : 0;
@@ -715,10 +679,9 @@ function renderSpeakingToday(){
 
 function renderTodayFine(){
   const u = getActiveUser();
-  const k = basisDateKey();
+  const k = todayKey();
   document.getElementById("basisDate").textContent = k;
 
-  // 오늘 벌금은 "마감 전이면 예상값(기록 0개면 0원 표시)"
   const fine = calcFineForDate(k, u);
   document.getElementById("todayFineBig").textContent = fine.toLocaleString() + "원";
 
@@ -732,13 +695,8 @@ function renderTodayFine(){
     return;
   }
 
-  const has = hasAnyRecord(row);
-  if(!has && !isDateClosed(k)){
-    detail.innerHTML = `아직 마감 전이라 “접속 안 함(15,000원)”은 확정되지 않아요.`;
-    return;
-  }
-  if(!has && isDateClosed(k)){
-    detail.innerHTML = `오늘 기록 0개 → <b>접속 안 함 15,000원</b>`;
+  if(!hasAnyRecord(row)){
+    detail.innerHTML = `오늘 기록이 없으면 벌금은 <b>0원</b>이에요.`;
     return;
   }
 
@@ -759,7 +717,7 @@ function renderTodayFine(){
 
 function renderRestMyStatus(){
   const u = getActiveUser();
-  const k = basisDateKey();
+  const k = todayKey();
   const data = load();
   const el = document.getElementById("restMyStatus");
   const s = getRestState(data, k, u);
@@ -783,17 +741,17 @@ function renderRestMyStatus(){
 
 function renderTodayScreen(){
   const data = load();
-  const k = basisDateKey();
+  const k = todayKey();
   const el = document.getElementById("today");
 
   el.innerHTML = `
     <div class="card">
       <h3 style="margin:0 0 6px;">오늘 현황</h3>
-      <div class="small">${k} 기준 (마감: 다음날 3시)</div>
+      <div class="small">${k} 기준</div>
     </div>
   `;
 
-  // 휴무 요청 패널(다른 두 명이 승인하는 UI)
+  // 휴무 요청 패널
   const restAll = data[k]?.__rest || {};
   const pending = Object.values(restAll).filter(x=>x && x.status==="pending");
   if(pending.length>0){
@@ -835,7 +793,7 @@ function renderTodayScreen(){
     }else if(ok){
       statusHTML = `<span class="ok">⭕ 기록 있음</span>`;
     }else{
-      statusHTML = `<span class="no">❌ 기록 없음</span> <span class="small">미실행</span>`;
+      statusHTML = `<span class="no">❌ 기록 없음</span>`;
     }
 
     el.innerHTML += `<div class="card"><b>${u}</b><br>${statusHTML}</div>`;
@@ -844,7 +802,7 @@ function renderTodayScreen(){
 
 function renderWeekScreen(){
   const data = load();
-  const baseKey = basisDateKey();
+  const baseKey = todayKey();
   const el = document.getElementById("week");
 
   el.innerHTML = `<div class="card"><h3 style="margin:0 0 6px;">4주 통계</h3><div class="small">최근 28일</div></div>`;
@@ -873,7 +831,7 @@ function renderWeekScreen(){
     el.innerHTML += `
       <div class="card">
         <b>${u}</b><br>
-        실행 ${exec} / 미실행 ${no} / 휴무승인 ${restDays}<br>
+        실행 ${exec} / 기록없음 ${no} / 휴무승인 ${restDays}<br>
         단어 불합격 체크 ${wordFail}개<br>
         패턴 불합격 ${patternFail}회<br>
         30분 이하 ${speakUnder30}회
@@ -882,12 +840,10 @@ function renderWeekScreen(){
 }
 
 function renderFine4w(){
-  const baseKey = basisDateKey();
+  const baseKey = todayKey();
   const body = document.getElementById("fine4wBody");
-
   body.innerHTML = "";
 
-  // 최근 28일 중 "마감 지난 날짜"만 확정 벌금 계산
   let totalAll = 0;
   const perUser = {};
 
@@ -895,7 +851,6 @@ function renderFine4w(){
     let sum = 0;
     for(let i=0;i<28;i++){
       const dk = dateKeyPlusDays(baseKey, -i);
-      if(!isDateClosed(dk)) continue; // 마감 전 날짜는 확정 계산에서 제외
       sum += calcFineForDate(dk, u);
     }
     perUser[u] = sum;
@@ -908,28 +863,27 @@ function renderFine4w(){
   body.innerHTML += `<div class="card"><b>전체 합계</b><br><b>${totalAll.toLocaleString()}원</b></div>`;
 }
 
+function formatMinutes(mins){
+  const h = Math.floor(mins/60);
+  const m = mins % 60;
+  if(h<=0) return `${m}분`;
+  if(m===0) return `${h}시간`;
+  return `${h}시간 ${m}분`;
+}
 function renderAcc(){
   const acc = loadAcc();
   const el = document.getElementById("accBody");
-  let total = 0;
-
   el.innerHTML = "";
+
   USERS.forEach(u=>{
     const mins = acc[u] || 0;
-    total += mins;
     el.innerHTML += `
       <div class="card">
         <b>${u}</b><br>
-        누적 말하기훈련: <b>${formatMinutes(mins)}</b>
+        말하기훈련 누적시간: <b>${formatMinutes(mins)}</b>
       </div>
     `;
   });
-  el.innerHTML += `
-    <div class="card">
-      <b>전체 누적</b><br>
-      합계: <b>${formatMinutes(total)}</b>
-    </div>
-  `;
 }
 
 function renderAll(){
@@ -961,7 +915,7 @@ function resetAll(){
 }
 
 /* =========================================================
-   시작(로그인) + 웰컴 팝업(디자인)
+   시작(로그인) + 웰컴 팝업
 ========================================================= */
 function showModal(title, body){
   const root = document.getElementById("modalRoot");
@@ -1048,11 +1002,8 @@ function boot(){
     document.getElementById("nameScreen").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
     showScreen("record");
-    // 자동 로그인일 때도 환영 모달(원하면 빼도 됨)
     showWelcome();
     renderAll();
-  }else{
-    // 이름 선택 화면 유지
   }
 }
 document.addEventListener("DOMContentLoaded", boot);
