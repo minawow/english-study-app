@@ -94,9 +94,6 @@
 <body>
 
 <script>
-/** ===== 버전 표시(캐시 확인용) ===== */
-const APP_VERSION = "v2026-01-06c";
-
 /** ===== 참가자/키 ===== */
 const USERS = ["오설란","오미진","김미나"];
 const ADMIN = "김미나";
@@ -208,7 +205,7 @@ function calcFineForDate(dateKey, user){
   if(isRestApproved(data, dateKey, user)) return 0;
 
   const row = data[dateKey]?.[user];
-  if(!hasAnyRecord(row)) return 0; // ★ 이것이 핵심: 자동 벌금 없음
+  if(!hasAnyRecord(row)) return 0;
 
   let fine = 0;
 
@@ -236,7 +233,7 @@ function saveAcc(acc){ localStorage.setItem(KEY_ACC, JSON.stringify(acc)); }
 
 function timeToMinutes(label){
   const map = {
-    "30분 이하": 30,
+    "30분 이하": 0,   // ✅ 요청: 30분 이하 = 0분 누적
     "30분": 30,
     "40분": 40,
     "50분": 50,
@@ -260,7 +257,7 @@ function subAcc(user, minutes){
 
 /** ===== 화면 ===== */
 function setNavActive(screenId){
-  const ids = ["record","today","week","fine4w","accTime"];
+  const ids = ["record","today","fine4w","accTime"];
   ids.forEach(id=>{
     const btn = document.getElementById("nav-"+(id==="fine4w"?"fine":id==="accTime"?"acc":id));
     if(btn) btn.classList.toggle("active", id === screenId);
@@ -540,7 +537,6 @@ function renderTodayScreen(){
     <div class="card">
       <h3 style="margin:0 0 6px;">오늘 현황</h3>
       <div class="small">${k} 기준</div>
-      <div class="small" style="margin-top:6px;"><span class="pill">버전 ${APP_VERSION}</span></div>
     </div>
   `;
 
@@ -592,45 +588,6 @@ function renderTodayScreen(){
   });
 }
 
-function renderWeekScreen(){
-  const data = load();
-  const baseKey = todayKey();
-  const el = document.getElementById("week");
-
-  el.innerHTML = `<div class="card"><h3 style="margin:0 0 6px;">4주 통계</h3><div class="small">최근 28일</div></div>`;
-
-  USERS.forEach(u=>{
-    let exec=0,no=0,wordFail=0,patternFail=0,speakUnder30=0,restDays=0;
-    for(let i=0;i<28;i++){
-      const dk = dateKeyPlusDays(baseKey, -i);
-      const row = data[dk]?.[u];
-
-      const restOk = isRestApproved(data, dk, u);
-      if(restOk){
-        restDays++;
-      }else{
-        if(hasAnyRecord(row)) exec++; else no++;
-      }
-
-      for(const a of (row?.wordAttempts||[])){
-        for(const o of (a.outcomes||[])){
-          if(o==="한>영 불합격"||o==="영>한 불합격") wordFail++;
-        }
-      }
-      patternFail += (row?.patternAttempts||[]).filter(p=>p.result==="불합격").length;
-      if(row?.speakingTime==="30분 이하") speakUnder30++;
-    }
-    el.innerHTML += `
-      <div class="card">
-        <b>${u}</b><br>
-        실행 ${exec} / 기록없음 ${no} / 휴무승인 ${restDays}<br>
-        단어 불합격 체크 ${wordFail}개<br>
-        패턴 불합격 ${patternFail}회<br>
-        30분 이하 ${speakUnder30}회
-      </div>`;
-  });
-}
-
 function renderFine4w(){
   const baseKey = todayKey();
   const body = document.getElementById("fine4wBody");
@@ -676,8 +633,6 @@ function renderAcc(){
       </div>
     `;
   });
-
-  // ✅ 요청: “전체 누적” 카드 삭제 -> 아예 만들지 않음
 }
 
 function renderAdminControls(){
@@ -685,7 +640,6 @@ function renderAdminControls(){
   const adminBox = document.getElementById("adminControls");
   if(!adminBox) return;
 
-  // ✅ 김미나만 초기화 버튼 노출
   if(u === ADMIN){
     adminBox.classList.remove("hidden");
   }else{
@@ -704,13 +658,12 @@ function renderAll(){
     renderRestMyStatus();
 
     renderTodayScreen();
-    renderWeekScreen();
     renderFine4w();
     renderAcc();
   }
 }
 
-/** ===== 초기화: 김미나만 버튼이 보이므로 UI 레벨에서 보호 + 비밀번호로 최종 보호 ===== */
+/** ===== 초기화: 김미나만 버튼이 보이도록 UI 레벨에서 보호 + 비밀번호로 최종 보호 ===== */
 function resetAll(){
   const u = getActiveUser();
   if(u !== ADMIN){
@@ -719,27 +672,22 @@ function resetAll(){
   const txt = prompt("전체 데이터를 초기화하려면 비밀번호를 입력하세요");
   if(txt !== "20262026") return alert("비밀번호가 틀렸어요.");
 
-  // 현재 KEY + 레거시 키 제거
   localStorage.removeItem(KEY);
   LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
 
-  // 로그인 세션은 유지(원하면 여기서도 지울 수 있음)
   alert("초기화 완료 (누적시간은 유지됩니다)");
   renderAll();
 }
 
-/** ===== 저장 & 로그아웃(데이터는 이미 저장되어 있고, 이름선택 화면으로 복귀) ===== */
+/** ===== 저장 & 로그아웃 ===== */
 function logout(){
-  // 로그인 유지 해제
   localStorage.removeItem(LS_USER);
   localStorage.removeItem(LS_REMEMBER);
   delete window.__tempUser;
 
-  // 화면 복귀
   document.getElementById("app").classList.add("hidden");
   document.getElementById("nameScreen").classList.remove("hidden");
 
-  // 선택값 리셋(편의)
   const sel = document.getElementById("userSelect");
   if(sel) sel.value = "";
   const rem = document.getElementById("rememberMe");
@@ -829,10 +777,6 @@ function boot(){
   buildWordRanges();
   buildPatternDays();
 
-  // 버전 뱃지
-  const vEl = document.getElementById("versionBadge");
-  if(vEl) vEl.textContent = `버전 ${APP_VERSION}`;
-
   if(remembered() && currentUser()){
     document.getElementById("nameScreen").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
@@ -848,7 +792,6 @@ document.addEventListener("DOMContentLoaded", boot);
 <div id="nameScreen" class="container">
   <div class="card">
     <h2 style="margin:0 0 10px;">이름 선택</h2>
-    <div class="small"><span class="pill" id="versionBadge"></span></div>
 
     <select id="userSelect" style="margin-top:10px;">
       <option value="">선택</option>
@@ -873,7 +816,6 @@ document.addEventListener("DOMContentLoaded", boot);
   <header>
     <button id="nav-record" class="active" onclick="showScreen('record')">오늘 기록</button>
     <button id="nav-today" onclick="showScreen('today')">오늘 현황</button>
-    <button id="nav-week" onclick="showScreen('week')">4주 통계</button>
     <button id="nav-fine" onclick="showScreen('fine4w')">4주 벌금</button>
     <button id="nav-acc" onclick="showScreen('accTime')">누적시간</button>
   </header>
@@ -885,11 +827,9 @@ document.addEventListener("DOMContentLoaded", boot);
       <div class="card">
         <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
         <div class="small">기준일: <span id="basisDate"></span> (휴대폰 날짜 기준)</div>
-        <div class="small" style="margin-top:6px;"><span class="pill">버전 <script>document.write(APP_VERSION)</script></span></div>
 
         <div class="note small" style="margin-top:10px;">
-          ✅ 기록이 1개라도 있으면 “공부한 날(⭕)”<br>
-          ❌ 기록이 없으면 “기록 없음(❌)” (벌금은 자동으로 쌓이지 않아요)
+          *오늘 마감시간까지(12시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 15,000원 확정
         </div>
 
         <hr class="sep">
@@ -1015,7 +955,6 @@ document.addEventListener("DOMContentLoaded", boot);
     </div>
 
     <div id="today" class="screen hidden"></div>
-    <div id="week" class="screen hidden"></div>
 
     <!-- 4주 벌금 -->
     <div id="fine4w" class="screen hidden">
@@ -1026,12 +965,10 @@ document.addEventListener("DOMContentLoaded", boot);
             <div class="small">최근 28일(기록 기반으로만 계산) / 기록이 없으면 0원</div>
           </div>
 
-          <!-- ✅ 김미나만 보이도록 렌더에서 제어 -->
           <div id="adminControls" class="hidden" style="text-align:right;">
             <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
           </div>
         </div>
-        <div class="small" style="margin-top:8px;"><span class="pill">버전 <script>document.write(APP_VERSION)</script></span></div>
       </div>
       <div id="fine4wBody"></div>
     </div>
@@ -1043,12 +980,10 @@ document.addEventListener("DOMContentLoaded", boot);
         <div class="small" style="margin-top:6px;">
           ※ 이 누적 데이터는 “전체 데이터 초기화”를 눌러도 지워지지 않아요. 앱이 살아있는 한 계속 누적됩니다.
         </div>
-        <div class="small" style="margin-top:8px;"><span class="pill">버전 <script>document.write(APP_VERSION)</script></span></div>
       </div>
 
       <div id="accBody"></div>
 
-      <!-- ✅ 요청: 마지막 메뉴 맨 밑에 저장 및 로그아웃 -->
       <div class="card">
         <b>마무리</b>
         <div class="small" style="margin-top:6px;">저장은 자동으로 됩니다. 아래 버튼을 누르면 이름 선택 화면으로 나가요.</div>
