@@ -430,13 +430,13 @@ function deleteSelectedPattern(){
   if(!row || !(row.patternAttempts||[]).some(p=>p.day===day)){
     return showModal("삭제할 기록 없음", `오늘 저장된 "${day}" 기록이 없어요.`);
   }
-  deleteWord(day);
+  deletePattern(day);
 }
 
 /** ===== 말하기 =====
- * - 이미 저장된 시간이 있으면 "수정 저장"으로 처리
- *   → 누적에서 이전 시간 빼고, 새 시간 더함
- * - 삭제 버튼은 누적에서 빼고 speakingTime 삭제
+ * ✅ 수정 포인트:
+ * - row.speakingMinutes(분)도 같이 저장
+ * - 삭제/수정 시 label이 아니라 minutes 기준으로 누적 차감
  */
 function saveSpeaking(){
   const u = getActiveUser();
@@ -449,15 +449,24 @@ function saveSpeaking(){
   const t = document.getElementById("speakingTime").value;
   if(!t) return showModal("시간 선택 필요", "훈련 시간을 선택해줘.");
 
+  const newM = timeToMinutes(t);
+
   // 이미 저장되어 있으면 "수정" 처리
   if(row.speakingTime){
-    const old = row.speakingTime;
-    if(old === t){
+    const oldLabel = row.speakingTime;
+    const oldM = (typeof row.speakingMinutes === "number")
+      ? row.speakingMinutes
+      : timeToMinutes(oldLabel);
+
+    if(oldLabel === t){
       return showModal("이미 저장됨", "오늘은 같은 시간으로 이미 저장되어 있어요.");
     }
-    subAcc(u, timeToMinutes(old));
-    addAcc(u, timeToMinutes(t));
+
+    subAcc(u, oldM);
+    addAcc(u, newM);
+
     row.speakingTime = t;
+    row.speakingMinutes = newM;   // ✅ 분도 갱신
     save(data);
     renderAll();
     return;
@@ -465,8 +474,9 @@ function saveSpeaking(){
 
   // 처음 저장
   row.speakingTime = t;
+  row.speakingMinutes = newM;     // ✅ 분도 저장
   save(data);
-  addAcc(u, timeToMinutes(t));
+  addAcc(u, newM);
   renderAll();
 }
 
@@ -478,8 +488,14 @@ function deleteSpeaking(){
   const row = data[k]?.[u];
   if(!row || !row.speakingTime) return;
 
-  subAcc(u, timeToMinutes(row.speakingTime));
+  const mins = (typeof row.speakingMinutes === "number")
+    ? row.speakingMinutes
+    : timeToMinutes(row.speakingTime);
+
+  subAcc(u, mins);
+
   delete row.speakingTime;
+  delete row.speakingMinutes;     // ✅ 같이 삭제
   save(data);
 
   const sel = document.getElementById("speakingTime");
@@ -893,7 +909,7 @@ function boot(){
     const bd = document.getElementById("basisDate");
     if(bd) bd.textContent = displayKeyWithWeekday(nowKey);
 
-    // 오늘현황의 “YYYY-MM-DD (요일) 기준”도 유지
+    // 오늘현황의 날짜도 유지
     renderTodayScreen();
   }, 30 * 1000); // 30초마다 체크
 }
@@ -903,7 +919,7 @@ document.addEventListener("DOMContentLoaded", boot);
 <!-- 이름 선택 -->
 <div id="nameScreen" class="container">
   <div class="card">
-    <h2 style="margin:0 0 10px;">      '삼년뒤' 영어스터디에 오신걸 환영합니다. 
+    <h2 style="margin:0 0 10px;">      '삼년뒤' 영어스터디에 오신걸 환영합니다.
       학습자 이름을 선택해주세요. </h2>
 
     <select id="userSelect" style="margin-top:10px;">
@@ -1112,8 +1128,3 @@ document.addEventListener("DOMContentLoaded", boot);
 <div id="modalRoot" class="hidden"></div>
 </body>
 </html>
-
-
-
-
-
