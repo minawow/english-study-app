@@ -110,15 +110,17 @@ const LEGACY_KEYS = [
   "fines", "fineData", "penaltyData"
 ];
 
-/** ===== 날짜: 휴대폰 날짜 그대로 ===== */
+/** ===== 날짜: 휴대폰 날짜 그대로(오늘) ===== */
 function todayKey(){
   const d = new Date();
   return d.toISOString().slice(0,10);
 }
-function dateKeyPlusDays(isoKey,delta){
-  const d = new Date(isoKey + "T00:00:00");
-  d.setDate(d.getDate()+delta);
-  return d.toISOString().slice(0,10);
+
+/** ✅ iOS Safari 날짜 파싱/ISO 변환으로 하루 밀리는 문제 방지(UTC 안전) */
+function dateKeyPlusDays(isoKey, delta){
+  const [y, m, d] = isoKey.split("-").map(Number);
+  const utc = Date.UTC(y, m - 1, d) + (delta * 86400000);
+  return new Date(utc).toISOString().slice(0, 10);
 }
 
 /** ===== 저장 ===== */
@@ -200,8 +202,7 @@ function approveRest(requester){
 }
 
 /** ===== 벌금 계산: “기록 없음”이면 무조건 0원(자동 부과 제거) ===== */
-function calcFineForDate(dateKey, user){
-  const data = load();
+function calcFineForDateWithData(data, dateKey, user){
   if(isRestApproved(data, dateKey, user)) return 0;
 
   const row = data[dateKey]?.[user];
@@ -225,6 +226,10 @@ function calcFineForDate(dateKey, user){
   if(row.speakingTime === "30분 이하") fine += 5000;
 
   return fine;
+}
+function calcFineForDate(dateKey, user){
+  const data = load();
+  return calcFineForDateWithData(data, dateKey, user);
 }
 
 /** ===== 누적시간(초기화해도 유지) ===== */
@@ -588,10 +593,14 @@ function renderTodayScreen(){
   });
 }
 
+/** ✅ 4주 벌금(28일) 집계: iOS에서도 날짜키 매칭되게 + data 한 번만 로드 */
 function renderFine4w(){
   const baseKey = todayKey();
   const body = document.getElementById("fine4wBody");
+  if(!body) return;
   body.innerHTML = "";
+
+  const data = load(); // 한 번만 로드
 
   let totalAll = 0;
   const perUser = {};
@@ -600,7 +609,7 @@ function renderFine4w(){
     let sum = 0;
     for(let i=0;i<28;i++){
       const dk = dateKeyPlusDays(baseKey, -i);
-      sum += calcFineForDate(dk, u);
+      sum += calcFineForDateWithData(data, dk, u);
     }
     perUser[u] = sum;
     totalAll += sum;
