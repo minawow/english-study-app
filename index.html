@@ -114,10 +114,23 @@ const LEGACY_KEYS = [
   "fines", "fineData", "penaltyData"
 ];
 
-/** ===== 날짜: 휴대폰 날짜 그대로(오늘) ===== */
+/** ===== 날짜: 휴대폰(로컬) 날짜 그대로(오늘) ===== */
 function todayKey(){
   const d = new Date();
-  return d.toISOString().slice(0,10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`; // ✅ 로컬 기준 YYYY-MM-DD
+}
+
+/** ✅ 화면 표시용: YYYY-MM-DD (요일) */
+function displayKeyWithWeekday(isoKey){
+  const [y, m, d] = isoKey.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const wd = ["일","월","화","수","목","금","토"][dt.getDay()];
+  const mm = String(m).padStart(2, "0");
+  const dd = String(d).padStart(2, "0");
+  return `${y}-${mm}-${dd} (${wd})`;
 }
 
 /** ✅ iOS Safari 날짜 파싱/ISO 변환으로 하루 밀리는 문제 방지(UTC 안전) */
@@ -127,7 +140,7 @@ function dateKeyPlusDays(isoKey, delta){
   return new Date(utc).toISOString().slice(0, 10);
 }
 
-/** ✅ 추가: 주말(토/일) 판별 */
+/** ✅ 주말(토/일) 판별 */
 function isWeekendKey(isoKey){
   const [y, m, d] = isoKey.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
@@ -213,7 +226,7 @@ function approveRest(requester){
   renderAll();
 }
 
-/** ===== 벌금 계산: “기록 없음”이면 무조건 0원(자동 부과 제거) + ✅주말(토/일) 0원 ===== */
+/** ===== 벌금 계산: “기록 없음”이면 무조건 0원(자동 부과 제거) + 주말(토/일) 0원 ===== */
 function calcFineForDateWithData(data, dateKey, user){
   if(isWeekendKey(dateKey)) return 0;              // ✅ 토/일은 벌금 정산 안 함
   if(isRestApproved(data, dateKey, user)) return 0;
@@ -417,7 +430,7 @@ function deleteSelectedPattern(){
   if(!row || !(row.patternAttempts||[]).some(p=>p.day===day)){
     return showModal("삭제할 기록 없음", `오늘 저장된 "${day}" 기록이 없어요.`);
   }
-  deletePattern(day);
+  deleteWord(day);
 }
 
 /** ===== 말하기 =====
@@ -533,7 +546,7 @@ function renderTodayFine(){
   const u = getActiveUser();
   const k = todayKey();
   const basis = document.getElementById("basisDate");
-  if(basis) basis.textContent = k;
+  if(basis) basis.textContent = displayKeyWithWeekday(k);
 
   const fine = calcFineForDate(k, u);
   const big = document.getElementById("todayFineBig");
@@ -607,7 +620,7 @@ function renderTodayScreen(){
   el.innerHTML = `
     <div class="card">
       <h3 style="margin:0 0 6px;">오늘 현황</h3>
-      <div class="small">${k} 기준</div>
+      <div class="small">${displayKeyWithWeekday(k)} 기준</div>
     </div>
   `;
 
@@ -863,7 +876,7 @@ function boot(){
     renderAll();
   }
 
-  /** ✅ 추가: 날짜가 바뀌면(휴대폰 시간 기준) 오늘기록/오늘현황/4주벌금 기준일 자동 갱신 */
+  /** ✅ 날짜가 바뀌면(휴대폰 로컬 기준) 오늘기록/오늘현황 기준일이 실시간으로 갱신 */
   let __lastDayKey = todayKey();
   setInterval(() => {
     const app = document.getElementById("app");
@@ -876,11 +889,11 @@ function boot(){
       return;
     }
 
-    // 날짜가 안 바뀌어도 기준일 텍스트는 항상 최신으로(안전)
+    // 기준일 텍스트는 항상 최신으로(요일 포함)
     const bd = document.getElementById("basisDate");
-    if(bd) bd.textContent = nowKey;
+    if(bd) bd.textContent = displayKeyWithWeekday(nowKey);
 
-    // 오늘현황의 “YYYY-MM-DD 기준”도 휴대폰 시간 기반으로 유지
+    // 오늘현황의 “YYYY-MM-DD (요일) 기준”도 유지
     renderTodayScreen();
   }, 30 * 1000); // 30초마다 체크
 }
@@ -957,7 +970,6 @@ document.addEventListener("DOMContentLoaded", boot);
             <p class="small" style="margin:8px 0 0;">벌금: <b>불합격 체크 1개당 5,000원</b></p>
           </div>
 
-          <!-- ✅ 문장말하기훈련처럼: 저장 + 삭제(선택된 구간 삭제) -->
           <div class="btnStack">
             <button class="primary" onclick="saveWord()">저장</button>
             <button class="danger" onclick="deleteSelectedWord()">삭제</button>
@@ -987,7 +999,6 @@ document.addEventListener("DOMContentLoaded", boot);
             <p class="small" style="margin:8px 0 0;">벌금: 불합격이면 <b>5,000원</b></p>
           </div>
 
-          <!-- ✅ 문장말하기훈련처럼: 저장 + 삭제(선택된 Day 삭제) -->
           <div class="btnStack">
             <button class="primary" onclick="savePattern()">저장</button>
             <button class="danger" onclick="deleteSelectedPattern()">삭제</button>
@@ -1063,7 +1074,7 @@ document.addEventListener("DOMContentLoaded", boot);
         <div class="row" style="align-items:flex-start;">
           <div>
             <h3 style="margin:0 0 6px;">4주 벌금</h3>
-            <div class="small">✅벌금은 4주 단위로 정산하여 계좌입금합니다✅계좌번호: 3333-19-8585112 카카오뱅크 김미나</div>
+            <div class="small">✅벌금은 4주 단위로 정산하여 계좌입금합니다(납입 재촉 예정)✅계좌번호: 3333-19-8585112 카카오뱅크 김미나</div>
           </div>
 
           <div id="adminControls" class="hidden" style="text-align:right;">
