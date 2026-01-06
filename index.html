@@ -620,7 +620,7 @@ function renderTodayScreen(){
   el.innerHTML = `
     <div class="card">
       <h3 style="margin:0 0 6px;">오늘 현황</h3>
-      <div class="small">${displayKeyWithWeekday(k)} 기준</div>
+      <div class="small">${displayKeyWithWeekday(k)} </div>
     </div>
   `;
 
@@ -938,7 +938,7 @@ document.addEventListener("DOMContentLoaded", boot);
     <div id="record" class="screen">
       <div class="card">
         <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
-        <div class="small">기준일: <span id="basisDate"></span> (휴대폰 날짜 기준)</div>
+        <div class="small">기준일: <span id="basisDate"></span> </div>
 
         <div class="note small" style="margin-top:10px;">
           *오늘 마감시간까지(12시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 15,000원 확정
@@ -1045,7 +1045,7 @@ document.addEventListener("DOMContentLoaded", boot);
         <div class="card" style="margin-top:12px;">
           <div class="kpi">
             <div>
-              <div class="small">오늘(기준일) 내 벌금</div>
+              <div class="small">오늘 내 벌금</div>
               <div id="todayFineBig" class="big">0원</div>
             </div>
             <div><span class="pill">자동 계산</span></div>
@@ -1111,3 +1111,4 @@ document.addEventListener("DOMContentLoaded", boot);
 <div id="modalRoot" class="hidden"></div>
 </body>
 </html>
+
