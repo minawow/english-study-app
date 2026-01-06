@@ -8,7 +8,7 @@
     :root{
       --main:#4f46e5; --bg:#f4f6fb; --card:#fff; --text:#1f2937;
       --danger:#dc2626; --muted:#6b7280; --line:#e5e7eb;
-      --ok:#16a34a; --warn:#f59e0b;
+      --ok:#16a34a;
     }
     *{box-sizing:border-box;}
     body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);}
@@ -80,234 +80,40 @@
     .modalBody .bigMsg{font-size:20px;font-weight:950;letter-spacing:-0.4px;line-height:1.35;}
     .modalBody .subMsg{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.45;}
     .modalActions{padding:14px 18px;display:flex;justify-content:flex-end;gap:10px;background:#fafafa;border-top:1px solid var(--line);}
+
+    .footerActions{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .footerActions > *{flex:1;min-width:160px;}
   </style>
 </head>
 
 <body>
 
-<!-- 이름 선택 -->
-<div id="nameScreen" class="container">
-  <div class="card">
-    <h2 style="margin:0 0 10px;">이름 선택</h2>
-
-    <select id="userSelect">
-      <option value="">선택</option>
-      <option>오설란</option>
-      <option>오미진</option>
-      <option>김미나</option>
-    </select>
-
-    <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
-      <input id="rememberMe" type="checkbox" style="width:auto; margin:0;">
-      <label for="rememberMe" class="small" style="margin:0; cursor:pointer;">
-        로그인 유지(체크하면 다음부터 자동 로그인)
-      </label>
-    </div>
-
-    <button id="startBtn" class="primary" style="margin-top:12px;" onclick="startApp()">시작</button>
-  </div>
-</div>
-
-<!-- 앱 -->
-<div id="app" class="hidden">
-  <header>
-    <button id="nav-record" class="active" onclick="showScreen('record')">오늘 기록</button>
-    <button id="nav-today" onclick="showScreen('today')">오늘 현황</button>
-    <button id="nav-week" onclick="showScreen('week')">4주 통계</button>
-    <button id="nav-fine" onclick="showScreen('fine4w')">4주 벌금</button>
-    <button id="nav-acc" onclick="showScreen('accTime')">누적시간</button>
-  </header>
-
-  <div class="container">
-
-    <!-- 오늘 기록 -->
-    <div id="record" class="screen">
-      <div class="card">
-        <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
-        <div class="small">기준일: <span id="basisDate"></span> (휴대폰 날짜 기준)</div>
-
-        <div class="note small" style="margin-top:10px;">
-          ✅ 오늘 기록이 1개라도 있으면 “공부한 날(⭕)”<br>
-          ❌ 오늘 기록이 없으면 “기록 없음(❌)”으로 표시됩니다.<br>
-          ※ 기록이 없다고 자동 벌금이 쌓이지 않아요. (0원부터 시작)
-        </div>
-
-        <hr class="sep">
-        <button class="sub" onclick="openSub('word', this)">A. 단어 1초 말하기</button>
-        <button class="sub" onclick="openSub('pattern', this)">B. 패턴시험</button>
-        <button class="sub" onclick="openSub('speaking', this)">C. 문장말하기훈련</button>
-
-        <!-- A -->
-        <div id="sub-word" class="card hidden" style="margin-top:12px;">
-          <p style="margin:0 0 8px;"><b>단어 1초 말하기</b></p>
-          <div class="small">번호 구간 선택 + 결과(복수 선택)</div>
-
-          <div style="margin-top:10px;">
-            <label class="small">단어 번호 구간 (50개 단위)</label>
-            <select id="wordRange"></select>
-          </div>
-
-          <div style="margin-top:10px;">
-            <label class="small">결과 (여러 개 선택 가능)</label>
-            <div class="chkGrid" id="wordOutcomeBox">
-              <label><input type="checkbox" value="한>영 합격">한>영 합격</label>
-              <label><input type="checkbox" value="한>영 불합격">한>영 불합격</label>
-              <label><input type="checkbox" value="영>한 합격">영>한 합격</label>
-              <label><input type="checkbox" value="영>한 불합격">영>한 불합격</label>
-            </div>
-            <p class="small" style="margin:8px 0 0;">벌금: <b>불합격 체크 1개당 5,000원</b></p>
-          </div>
-
-          <div class="row" style="margin-top:12px;">
-            <button class="primary" onclick="saveWord()">저장</button>
-            <button class="ghost" onclick="clearWordSelections()">선택 초기화</button>
-          </div>
-
-          <div class="listItem">
-            <div class="small"><b>오늘 저장된 단어 기록</b> (같은 구간 중복 저장 불가)</div>
-            <div id="todayWordItems" class="small" style="margin-top:8px;"></div>
-          </div>
-        </div>
-
-        <!-- B -->
-        <div id="sub-pattern" class="card hidden" style="margin-top:12px;">
-          <p style="margin:0 0 8px;"><b>패턴시험</b></p>
-
-          <div style="margin-top:10px;">
-            <label class="small">Day 선택</label>
-            <select id="patternDay"></select>
-          </div>
-
-          <div style="margin-top:10px;">
-            <label class="small">결과</label>
-            <select id="patternResult">
-              <option value="합격">합격</option>
-              <option value="불합격">불합격</option>
-            </select>
-            <p class="small" style="margin:8px 0 0;">벌금: 불합격이면 <b>5,000원</b></p>
-          </div>
-
-          <div class="row" style="margin-top:12px;">
-            <button class="primary" onclick="savePattern()">저장</button>
-            <button class="ghost" onclick="clearPatternInputs()">입력 초기화</button>
-          </div>
-
-          <div class="listItem">
-            <div class="small"><b>오늘 저장된 패턴 기록</b> (같은 Day 중복 저장 불가)</div>
-            <div id="todayPatternItems" class="small" style="margin-top:8px;"></div>
-          </div>
-        </div>
-
-        <!-- C -->
-        <div id="sub-speaking" class="card hidden" style="margin-top:12px;">
-          <p style="margin:0 0 8px;"><b>문장말하기훈련</b></p>
-
-          <div style="margin-top:10px;">
-            <label class="small">훈련 시간</label>
-            <select id="speakingTime">
-              <option value="">선택</option>
-              <option value="30분 이하">30분 이하</option>
-              <option value="30분">30분</option>
-              <option value="40분">40분</option>
-              <option value="50분">50분</option>
-              <option value="60분">60분</option>
-              <option value="2시간">2시간</option>
-              <option value="3시간">3시간</option>
-              <option value="4시간">4시간</option>
-            </select>
-            <p class="small" style="margin:8px 0 0;">벌금: <b>30분 이하</b> 선택 시 <b>5,000원</b></p>
-          </div>
-
-          <div class="row" style="margin-top:12px;">
-            <button class="primary" onclick="saveSpeaking()">저장</button>
-            <button class="danger" onclick="deleteSpeaking()">삭제</button>
-          </div>
-
-          <div class="listItem">
-            <div class="small"><b>오늘 저장된 문장말하기훈련</b></div>
-            <div id="todaySpeakingItem" class="small" style="margin-top:8px;"></div>
-          </div>
-        </div>
-
-        <!-- 오늘 벌금 미리보기 -->
-        <div class="card" style="margin-top:12px;">
-          <div class="kpi">
-            <div>
-              <div class="small">오늘(기준일) 내 벌금</div>
-              <div id="todayFineBig" class="big">0원</div>
-            </div>
-            <div><span class="pill">자동 계산</span></div>
-          </div>
-          <div id="todayFineDetail" class="small" style="margin-top:10px;"></div>
-        </div>
-
-        <!-- 휴무 요청 버튼 -->
-        <div class="card" style="margin-top:12px;">
-          <div class="small"><b>특별 기능</b> — 오늘 쉬고 싶다면?</div>
-          <div class="small" style="margin-top:6px;">“오늘은 나 쉴게!”를 누르면, 나머지 두 사람이 모두 승인해야 오늘 벌금이 스킵돼요.</div>
-          <div class="row" style="margin-top:10px;">
-            <button class="ghost" onclick="requestRest()">오늘은 나 쉴게!</button>
-          </div>
-          <div id="restMyStatus" class="small" style="margin-top:10px;"></div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- 오늘 현황 -->
-    <div id="today" class="screen hidden"></div>
-
-    <!-- 4주 통계 -->
-    <div id="week" class="screen hidden"></div>
-
-    <!-- 4주 벌금 -->
-    <div id="fine4w" class="screen hidden">
-      <div class="card">
-        <div class="row" style="align-items:flex-start;">
-          <div>
-            <h3 style="margin:0 0 6px;">4주 벌금</h3>
-            <div class="small">최근 28일(기록 기반으로만 계산)</div>
-          </div>
-          <div style="text-align:right;">
-            <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
-          </div>
-        </div>
-      </div>
-      <div id="fine4wBody"></div>
-    </div>
-
-    <!-- 누적시간 -->
-    <div id="accTime" class="screen hidden">
-      <div class="card banner">
-        <b>영어말하기훈련을 실제 얼마나 했는지 누적량이 표시됩니다</b>
-        <div class="small" style="margin-top:6px;">
-          ※ 이 누적 데이터는 “전체 데이터 초기화”를 눌러도 지워지지 않아요. 앱이 살아있는 한 계속 누적됩니다.
-        </div>
-      </div>
-      <div id="accBody"></div>
-    </div>
-
-  </div>
-</div>
-
-<!-- 모달 -->
-<div id="modalRoot" class="hidden"></div>
-
 <script>
-/* =========================================================
-   저장 키
-========================================================= */
+/** ===== 버전 표시(캐시 확인용) ===== */
+const APP_VERSION = "v2026-01-06c";
+
+/** ===== 참가자/키 ===== */
 const USERS = ["오설란","오미진","김미나"];
+const ADMIN = "김미나";
+
 const KEY = "studyData";                 // 일자별 기록(초기화 대상)
 const LS_USER = "currentUser";
 const LS_REMEMBER = "rememberMe";
 const KEY_ACC = "accSpeakingMinutes";    // 누적시간(초기화해도 유지)
 
-/* =========================================================
-   날짜 로직 (요청 반영)
-   - 휴대폰 날짜 그대로 사용
-   - 새벽 3시 마감/잠금/전날 잠김 모두 삭제
-========================================================= */
+/** (예전 버전/실험에서 쓰였을 가능성이 있는 키들까지 같이 정리) */
+const LEGACY_KEYS = [
+  "studyData", "studyData_v1", "studyData_v2",
+  "englishStudyAppData", "studyLogs", "glideStudyData",
+  "fines", "fineData", "penaltyData"
+];
+
+/** ===== 날짜: 휴대폰 날짜 그대로 ===== */
 function todayKey(){
   const d = new Date();
   return d.toISOString().slice(0,10);
@@ -318,11 +124,11 @@ function dateKeyPlusDays(isoKey,delta){
   return d.toISOString().slice(0,10);
 }
 
+/** ===== 저장 ===== */
 function load(){ return JSON.parse(localStorage.getItem(KEY)) || {}; }
 function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
 function remembered(){ return localStorage.getItem(LS_REMEMBER) === "1"; }
 function currentUser(){ return localStorage.getItem(LS_USER) || ""; }
-// remember 체크 안 한 세션용
 function getActiveUser(){ return currentUser() || window.__tempUser || ""; }
 
 function ensureRow(data, dateKey, user){
@@ -340,10 +146,7 @@ function hasAnyRecord(row){
   return hasWord || hasPattern || hasSpeaking;
 }
 
-/* =========================================================
-   휴무(쉬기) 요청 로직
-   - 오늘(휴대폰 날짜)만
-========================================================= */
+/** ===== 휴무 요청 ===== */
 function ensureRestObj(data, dateKey){
   data[dateKey] ??= {};
   data[dateKey].__rest ??= {};
@@ -399,22 +202,17 @@ function approveRest(requester){
   renderAll();
 }
 
-/* =========================================================
-   벌금 계산 (요청 반영)
-   - 기록이 없으면 벌금 0원 (자동 누적 제거)
-   - 단어: 한>영 불합격, 영>한 불합격 체크 1개당 5,000원
-   - 패턴: 불합격 5,000원
-   - 문장: 30분 이하 5,000원
-   - 휴무 승인: 그 날짜 벌금 0원
-========================================================= */
+/** ===== 벌금 계산: “기록 없음”이면 무조건 0원(자동 부과 제거) ===== */
 function calcFineForDate(dateKey, user){
   const data = load();
   if(isRestApproved(data, dateKey, user)) return 0;
 
   const row = data[dateKey]?.[user];
-  if(!hasAnyRecord(row)) return 0; // ★ 자동 벌금 없음
+  if(!hasAnyRecord(row)) return 0; // ★ 이것이 핵심: 자동 벌금 없음
 
   let fine = 0;
+
+  // 단어 불합격 체크(한>영 불합격, 영>한 불합격) 1개당 5,000원
   let wordFail = 0;
   for(const a of (row.wordAttempts || [])){
     for(const o of (a.outcomes || [])){
@@ -422,14 +220,17 @@ function calcFineForDate(dateKey, user){
     }
   }
   fine += wordFail * 5000;
+
+  // 패턴 불합격 5,000원
   fine += (row.patternAttempts || []).filter(p => p.result === "불합격").length * 5000;
+
+  // 문장말하기 30분 이하 5,000원
   if(row.speakingTime === "30분 이하") fine += 5000;
+
   return fine;
 }
 
-/* =========================================================
-   누적시간(초기화해도 유지)
-========================================================= */
+/** ===== 누적시간(초기화해도 유지) ===== */
 function loadAcc(){ return JSON.parse(localStorage.getItem(KEY_ACC)) || {}; }
 function saveAcc(acc){ localStorage.setItem(KEY_ACC, JSON.stringify(acc)); }
 
@@ -457,9 +258,7 @@ function subAcc(user, minutes){
   saveAcc(acc);
 }
 
-/* =========================================================
-   화면 전환
-========================================================= */
+/** ===== 화면 ===== */
 function setNavActive(screenId){
   const ids = ["record","today","week","fine4w","accTime"];
   ids.forEach(id=>{
@@ -480,10 +279,7 @@ function openSub(subId, btnEl){
   document.getElementById("sub-"+subId).classList.remove("hidden");
 }
 
-/* =========================================================
-   단어/패턴/문장 저장
-   - 날짜 잠금 없음 (요청 반영)
-========================================================= */
+/** ===== 옵션 구성 ===== */
 function buildWordRanges(){
   const sel = document.getElementById("wordRange");
   sel.innerHTML = "";
@@ -506,13 +302,14 @@ function buildPatternDays(){
   }
   sel.value = "Day1";
 }
+
+/** ===== 단어 ===== */
 function getSelectedWordOutcomes(){
   return Array.from(document.querySelectorAll("#wordOutcomeBox input[type='checkbox']:checked")).map(x=>x.value);
 }
 function clearWordSelections(){
   document.querySelectorAll("#wordOutcomeBox input[type='checkbox']").forEach(x=>x.checked=false);
 }
-
 function saveWord(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
@@ -546,6 +343,7 @@ function deleteWord(range){
   renderAll();
 }
 
+/** ===== 패턴 ===== */
 function savePattern(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
@@ -581,6 +379,7 @@ function clearPatternInputs(){
   document.getElementById("patternResult").value = "합격";
 }
 
+/** ===== 말하기 ===== */
 function saveSpeaking(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
@@ -608,15 +407,12 @@ function deleteSpeaking(){
   if(!row || !row.speakingTime) return;
 
   subAcc(u, timeToMinutes(row.speakingTime));
-
   delete row.speakingTime;
   save(data);
   renderAll();
 }
 
-/* =========================================================
-   렌더링
-========================================================= */
+/** ===== 렌더 ===== */
 function renderWordTodayList(){
   const el = document.getElementById("todayWordItems");
   const u = getActiveUser();
@@ -641,7 +437,6 @@ function renderWordTodayList(){
     `;
   }).join("");
 }
-
 function renderPatternTodayList(){
   const el = document.getElementById("todayPatternItems");
   const u = getActiveUser();
@@ -663,7 +458,6 @@ function renderPatternTodayList(){
     `;
   }).join("");
 }
-
 function renderSpeakingToday(){
   const el = document.getElementById("todaySpeakingItem");
   const u = getActiveUser();
@@ -687,14 +481,12 @@ function renderTodayFine(){
 
   const data = load();
   const row = data[k]?.[u];
-
   const detail = document.getElementById("todayFineDetail");
 
   if(isRestApproved(data, k, u)){
     detail.innerHTML = `😴 <b>휴무 승인 완료</b> — 오늘 벌금은 스킵됩니다.`;
     return;
   }
-
   if(!hasAnyRecord(row)){
     detail.innerHTML = `오늘 기록이 없으면 벌금은 <b>0원</b>이에요.`;
     return;
@@ -748,10 +540,10 @@ function renderTodayScreen(){
     <div class="card">
       <h3 style="margin:0 0 6px;">오늘 현황</h3>
       <div class="small">${k} 기준</div>
+      <div class="small" style="margin-top:6px;"><span class="pill">버전 ${APP_VERSION}</span></div>
     </div>
   `;
 
-  // 휴무 요청 패널
   const restAll = data[k]?.__rest || {};
   const pending = Object.values(restAll).filter(x=>x && x.status==="pending");
   if(pending.length>0){
@@ -884,10 +676,27 @@ function renderAcc(){
       </div>
     `;
   });
+
+  // ✅ 요청: “전체 누적” 카드 삭제 -> 아예 만들지 않음
+}
+
+function renderAdminControls(){
+  const u = getActiveUser();
+  const adminBox = document.getElementById("adminControls");
+  if(!adminBox) return;
+
+  // ✅ 김미나만 초기화 버튼 노출
+  if(u === ADMIN){
+    adminBox.classList.remove("hidden");
+  }else{
+    adminBox.classList.add("hidden");
+  }
 }
 
 function renderAll(){
   if(!document.getElementById("app").classList.contains("hidden")){
+    renderAdminControls();
+
     renderWordTodayList();
     renderPatternTodayList();
     renderSpeakingToday();
@@ -901,22 +710,45 @@ function renderAll(){
   }
 }
 
-/* =========================================================
-   초기화 (비밀번호 20262026)
-   - studyData만 삭제
-   - 누적시간(KEY_ACC)은 유지
-========================================================= */
+/** ===== 초기화: 김미나만 버튼이 보이므로 UI 레벨에서 보호 + 비밀번호로 최종 보호 ===== */
 function resetAll(){
+  const u = getActiveUser();
+  if(u !== ADMIN){
+    return showModal("권한 없음", "이 작업은 관리자만 할 수 있어요.");
+  }
   const txt = prompt("전체 데이터를 초기화하려면 비밀번호를 입력하세요");
   if(txt !== "20262026") return alert("비밀번호가 틀렸어요.");
+
+  // 현재 KEY + 레거시 키 제거
   localStorage.removeItem(KEY);
+  LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
+
+  // 로그인 세션은 유지(원하면 여기서도 지울 수 있음)
   alert("초기화 완료 (누적시간은 유지됩니다)");
   renderAll();
 }
 
-/* =========================================================
-   시작(로그인) + 웰컴 팝업
-========================================================= */
+/** ===== 저장 & 로그아웃(데이터는 이미 저장되어 있고, 이름선택 화면으로 복귀) ===== */
+function logout(){
+  // 로그인 유지 해제
+  localStorage.removeItem(LS_USER);
+  localStorage.removeItem(LS_REMEMBER);
+  delete window.__tempUser;
+
+  // 화면 복귀
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("nameScreen").classList.remove("hidden");
+
+  // 선택값 리셋(편의)
+  const sel = document.getElementById("userSelect");
+  if(sel) sel.value = "";
+  const rem = document.getElementById("rememberMe");
+  if(rem) rem.checked = false;
+
+  showModal("로그아웃 완료", "이름을 다시 선택해서 들어올 수 있어요.");
+}
+
+/** ===== 모달 ===== */
 function showModal(title, body){
   const root = document.getElementById("modalRoot");
   root.classList.remove("hidden");
@@ -967,6 +799,7 @@ function escapeHtml(s){
   return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
+/** ===== 시작 ===== */
 function startApp(){
   const sel = document.getElementById("userSelect");
   const rememberChk = document.getElementById("rememberMe");
@@ -991,12 +824,14 @@ function startApp(){
   renderAll();
 }
 
-/* =========================================================
-   부팅
-========================================================= */
+/** ===== 부팅 ===== */
 function boot(){
   buildWordRanges();
   buildPatternDays();
+
+  // 버전 뱃지
+  const vEl = document.getElementById("versionBadge");
+  if(vEl) vEl.textContent = `버전 ${APP_VERSION}`;
 
   if(remembered() && currentUser()){
     document.getElementById("nameScreen").classList.add("hidden");
@@ -1009,5 +844,223 @@ function boot(){
 document.addEventListener("DOMContentLoaded", boot);
 </script>
 
+<!-- 이름 선택 -->
+<div id="nameScreen" class="container">
+  <div class="card">
+    <h2 style="margin:0 0 10px;">이름 선택</h2>
+    <div class="small"><span class="pill" id="versionBadge"></span></div>
+
+    <select id="userSelect" style="margin-top:10px;">
+      <option value="">선택</option>
+      <option>오설란</option>
+      <option>오미진</option>
+      <option>김미나</option>
+    </select>
+
+    <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+      <input id="rememberMe" type="checkbox" style="width:auto; margin:0;">
+      <label for="rememberMe" class="small" style="margin:0; cursor:pointer;">
+        로그인 유지(체크하면 다음부터 자동 로그인)
+      </label>
+    </div>
+
+    <button id="startBtn" class="primary" style="margin-top:12px;" onclick="startApp()">시작</button>
+  </div>
+</div>
+
+<!-- 앱 -->
+<div id="app" class="hidden">
+  <header>
+    <button id="nav-record" class="active" onclick="showScreen('record')">오늘 기록</button>
+    <button id="nav-today" onclick="showScreen('today')">오늘 현황</button>
+    <button id="nav-week" onclick="showScreen('week')">4주 통계</button>
+    <button id="nav-fine" onclick="showScreen('fine4w')">4주 벌금</button>
+    <button id="nav-acc" onclick="showScreen('accTime')">누적시간</button>
+  </header>
+
+  <div class="container">
+
+    <!-- 오늘 기록 -->
+    <div id="record" class="screen">
+      <div class="card">
+        <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
+        <div class="small">기준일: <span id="basisDate"></span> (휴대폰 날짜 기준)</div>
+        <div class="small" style="margin-top:6px;"><span class="pill">버전 <script>document.write(APP_VERSION)</script></span></div>
+
+        <div class="note small" style="margin-top:10px;">
+          ✅ 기록이 1개라도 있으면 “공부한 날(⭕)”<br>
+          ❌ 기록이 없으면 “기록 없음(❌)” (벌금은 자동으로 쌓이지 않아요)
+        </div>
+
+        <hr class="sep">
+        <button class="sub" onclick="openSub('word', this)">A. 단어 1초 말하기</button>
+        <button class="sub" onclick="openSub('pattern', this)">B. 패턴시험</button>
+        <button class="sub" onclick="openSub('speaking', this)">C. 문장말하기훈련</button>
+
+        <!-- A -->
+        <div id="sub-word" class="card hidden" style="margin-top:12px;">
+          <p style="margin:0 0 8px;"><b>단어 1초 말하기</b></p>
+          <div class="small">번호 구간 선택 + 결과(복수 선택)</div>
+
+          <div style="margin-top:10px;">
+            <label class="small">단어 번호 구간 (50개 단위)</label>
+            <select id="wordRange"></select>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label class="small">결과 (여러 개 선택 가능)</label>
+            <div class="chkGrid" id="wordOutcomeBox">
+              <label><input type="checkbox" value="한>영 합격">한>영 합격</label>
+              <label><input type="checkbox" value="한>영 불합격">한>영 불합격</label>
+              <label><input type="checkbox" value="영>한 합격">영>한 합격</label>
+              <label><input type="checkbox" value="영>한 불합격">영>한 불합격</label>
+            </div>
+            <p class="small" style="margin:8px 0 0;">벌금: <b>불합격 체크 1개당 5,000원</b></p>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="primary" onclick="saveWord()">저장</button>
+            <button class="ghost" onclick="clearWordSelections()">선택 초기화</button>
+          </div>
+
+          <div class="listItem">
+            <div class="small"><b>오늘 저장된 단어 기록</b> (같은 구간 중복 저장 불가)</div>
+            <div id="todayWordItems" class="small" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- B -->
+        <div id="sub-pattern" class="card hidden" style="margin-top:12px;">
+          <p style="margin:0 0 8px;"><b>패턴시험</b></p>
+
+          <div style="margin-top:10px;">
+            <label class="small">Day 선택</label>
+            <select id="patternDay"></select>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label class="small">결과</label>
+            <select id="patternResult">
+              <option value="합격">합격</option>
+              <option value="불합격">불합격</option>
+            </select>
+            <p class="small" style="margin:8px 0 0;">벌금: 불합격이면 <b>5,000원</b></p>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="primary" onclick="savePattern()">저장</button>
+            <button class="ghost" onclick="clearPatternInputs()">입력 초기화</button>
+          </div>
+
+          <div class="listItem">
+            <div class="small"><b>오늘 저장된 패턴 기록</b> (같은 Day 중복 저장 불가)</div>
+            <div id="todayPatternItems" class="small" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- C -->
+        <div id="sub-speaking" class="card hidden" style="margin-top:12px;">
+          <p style="margin:0 0 8px;"><b>문장말하기훈련</b></p>
+
+          <div style="margin-top:10px;">
+            <label class="small">훈련 시간</label>
+            <select id="speakingTime">
+              <option value="">선택</option>
+              <option value="30분 이하">30분 이하</option>
+              <option value="30분">30분</option>
+              <option value="40분">40분</option>
+              <option value="50분">50분</option>
+              <option value="60분">60분</option>
+              <option value="2시간">2시간</option>
+              <option value="3시간">3시간</option>
+              <option value="4시간">4시간</option>
+            </select>
+            <p class="small" style="margin:8px 0 0;">벌금: <b>30분 이하</b> 선택 시 <b>5,000원</b></p>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="primary" onclick="saveSpeaking()">저장</button>
+            <button class="danger" onclick="deleteSpeaking()">삭제</button>
+          </div>
+
+          <div class="listItem">
+            <div class="small"><b>오늘 저장된 문장말하기훈련</b></div>
+            <div id="todaySpeakingItem" class="small" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- 오늘 벌금 -->
+        <div class="card" style="margin-top:12px;">
+          <div class="kpi">
+            <div>
+              <div class="small">오늘(기준일) 내 벌금</div>
+              <div id="todayFineBig" class="big">0원</div>
+            </div>
+            <div><span class="pill">자동 계산</span></div>
+          </div>
+          <div id="todayFineDetail" class="small" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- 휴무 -->
+        <div class="card" style="margin-top:12px;">
+          <div class="small"><b>특별 기능</b> — 오늘 쉬고 싶다면?</div>
+          <div class="small" style="margin-top:6px;">“오늘은 나 쉴게!”를 누르면, 나머지 두 사람이 모두 승인해야 오늘 벌금이 스킵돼요.</div>
+          <div class="row" style="margin-top:10px;">
+            <button class="ghost" onclick="requestRest()">오늘은 나 쉴게!</button>
+          </div>
+          <div id="restMyStatus" class="small" style="margin-top:10px;"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="today" class="screen hidden"></div>
+    <div id="week" class="screen hidden"></div>
+
+    <!-- 4주 벌금 -->
+    <div id="fine4w" class="screen hidden">
+      <div class="card">
+        <div class="row" style="align-items:flex-start;">
+          <div>
+            <h3 style="margin:0 0 6px;">4주 벌금</h3>
+            <div class="small">최근 28일(기록 기반으로만 계산) / 기록이 없으면 0원</div>
+          </div>
+
+          <!-- ✅ 김미나만 보이도록 렌더에서 제어 -->
+          <div id="adminControls" class="hidden" style="text-align:right;">
+            <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
+          </div>
+        </div>
+        <div class="small" style="margin-top:8px;"><span class="pill">버전 <script>document.write(APP_VERSION)</script></span></div>
+      </div>
+      <div id="fine4wBody"></div>
+    </div>
+
+    <!-- 누적시간 -->
+    <div id="accTime" class="screen hidden">
+      <div class="card banner">
+        <b>영어말하기훈련을 실제 얼마나 했는지 누적량이 표시됩니다</b>
+        <div class="small" style="margin-top:6px;">
+          ※ 이 누적 데이터는 “전체 데이터 초기화”를 눌러도 지워지지 않아요. 앱이 살아있는 한 계속 누적됩니다.
+        </div>
+        <div class="small" style="margin-top:8px;"><span class="pill">버전 <script>document.write(APP_VERSION)</script></span></div>
+      </div>
+
+      <div id="accBody"></div>
+
+      <!-- ✅ 요청: 마지막 메뉴 맨 밑에 저장 및 로그아웃 -->
+      <div class="card">
+        <b>마무리</b>
+        <div class="small" style="margin-top:6px;">저장은 자동으로 됩니다. 아래 버튼을 누르면 이름 선택 화면으로 나가요.</div>
+        <div class="footerActions">
+          <button class="primary" onclick="logout()">저장 및 로그아웃</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="modalRoot" class="hidden"></div>
 </body>
 </html>
