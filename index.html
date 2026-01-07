@@ -93,8 +93,12 @@
     }
     .footerActions > *{flex:1;min-width:160px;}
 
-    /* ✅ (추가) 인트로/이름선택 화면 iPhone 감성 */
+    /* ✅ 인트로/이름선택 화면 iPhone 감성 */
     #nameScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    /* ✅ (중요) #nameScreen이 id 스타일로 display:flex를 갖고 있어서,
+       hidden이 안 먹던 문제를 해결: 예전처럼 "새 화면처럼" 전환됩니다 */
+    #nameScreen.hidden{display:none !important;}
+
     .loginCard{
       width:min(520px, 92vw);
       background:rgba(255,255,255,.88);
@@ -288,7 +292,7 @@ function approveRest(requester){
 
 /** ===== 벌금 계산: “기록 없음”이면 무조건 0원(자동 부과 제거) + 주말(토/일) 0원 ===== */
 function calcFineForDateWithData(data, dateKey, user){
-  if(isWeekendKey(dateKey)) return 0;              // ✅ 토/일은 벌금 정산 안 함
+  if(isWeekendKey(dateKey)) return 0;
   if(isRestApproved(data, dateKey, user)) return 0;
 
   const row = data[dateKey]?.[user];
@@ -296,7 +300,6 @@ function calcFineForDateWithData(data, dateKey, user){
 
   let fine = 0;
 
-  // 단어 불합격 체크(한>영 불합격, 영>한 불합격) 1개당 5,000원
   let wordFail = 0;
   for(const a of (row.wordAttempts || [])){
     for(const o of (a.outcomes || [])){
@@ -305,10 +308,8 @@ function calcFineForDateWithData(data, dateKey, user){
   }
   fine += wordFail * 5000;
 
-  // 패턴 불합격 5,000원
   fine += (row.patternAttempts || []).filter(p => p.result === "불합격").length * 5000;
 
-  // 문장말하기 30분 이하 5,000원
   if(row.speakingTime === "30분 이하") fine += 5000;
 
   return fine;
@@ -324,7 +325,7 @@ function saveAcc(acc){ localStorage.setItem(KEY_ACC, JSON.stringify(acc)); }
 
 function timeToMinutes(label){
   const map = {
-    "30분 이하": 0,   // ✅ 요청: 30분 이하 = 0분 누적
+    "30분 이하": 0,
     "30분": 30,
     "40분": 40,
     "50분": 50,
@@ -430,8 +431,6 @@ function deleteWord(range){
   save(data);
   renderAll();
 }
-
-/* ✅ 문장말하기훈련처럼 “빨간 삭제 버튼”을 단어시험에도 적용: 선택된 구간 삭제 */
 function deleteSelectedWord(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
@@ -477,8 +476,6 @@ function deletePattern(day){
   save(data);
   renderAll();
 }
-
-/* ✅ 문장말하기훈련처럼 “빨간 삭제 버튼”을 패턴시험에도 적용: 선택된 Day 삭제 */
 function deleteSelectedPattern(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
@@ -493,11 +490,7 @@ function deleteSelectedPattern(){
   deleteWord(day);
 }
 
-/** ===== 말하기 =====
- * - 이미 저장된 시간이 있으면 "수정 저장"으로 처리
- *   → 누적에서 이전 시간 빼고, 새 시간 더함
- * - 삭제 버튼은 누적에서 빼고 speakingTime 삭제
- */
+/** ===== 말하기 ===== */
 function saveSpeaking(){
   const u = getActiveUser();
   if(!u) return showModal("이름 필요", "이름 선택 후 이용할 수 있어요.");
@@ -509,7 +502,6 @@ function saveSpeaking(){
   const t = document.getElementById("speakingTime").value;
   if(!t) return showModal("시간 선택 필요", "훈련 시간을 선택해줘.");
 
-  // 이미 저장되어 있으면 "수정" 처리
   if(row.speakingTime){
     const old = row.speakingTime;
     if(old === t){
@@ -523,7 +515,6 @@ function saveSpeaking(){
     return;
   }
 
-  // 처음 저장
   row.speakingTime = t;
   save(data);
   addAcc(u, timeToMinutes(t));
@@ -734,14 +725,13 @@ function renderTodayScreen(){
   });
 }
 
-/** ✅ 4주 벌금(28일) 집계 */
 function renderFine4w(){
   const baseKey = todayKey();
   const body = document.getElementById("fine4wBody");
   if(!body) return;
   body.innerHTML = "";
 
-  const data = load(); // 한 번만 로드
+  const data = load();
 
   let totalAll = 0;
   const perUser = {};
@@ -814,7 +804,6 @@ function renderAll(){
   }
 }
 
-/** ===== 초기화: 김미나만 버튼이 보이도록 UI 레벨에서 보호 + 비밀번호로 최종 보호 ===== */
 function resetAll(){
   const u = getActiveUser();
   if(u !== ADMIN){
@@ -830,7 +819,6 @@ function resetAll(){
   renderAll();
 }
 
-/** ===== 저장 & 로그아웃 ===== */
 function logout(){
   localStorage.removeItem(LS_USER);
   localStorage.removeItem(LS_REMEMBER);
@@ -847,7 +835,6 @@ function logout(){
   showModal("로그아웃 완료", "이름을 다시 선택해서 들어올 수 있어요.");
 }
 
-/** ===== 모달 ===== */
 function showModal(title, body){
   const root = document.getElementById("modalRoot");
   root.classList.remove("hidden");
@@ -898,7 +885,6 @@ function escapeHtml(s){
   return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
-/** ===== 시작 ===== */
 function startApp(){
   const sel = document.getElementById("userSelect");
   const rememberChk = document.getElementById("rememberMe");
@@ -923,7 +909,6 @@ function startApp(){
   renderAll();
 }
 
-/** ===== 부팅 ===== */
 function boot(){
   buildWordRanges();
   buildPatternDays();
@@ -936,7 +921,6 @@ function boot(){
     renderAll();
   }
 
-  /** ✅ 날짜가 바뀌면(휴대폰 로컬 기준) 오늘기록/오늘현황 기준일이 실시간으로 갱신 */
   let __lastDayKey = todayKey();
   setInterval(() => {
     const app = document.getElementById("app");
@@ -945,28 +929,28 @@ function boot(){
     const nowKey = todayKey();
     if(nowKey !== __lastDayKey){
       __lastDayKey = nowKey;
-      renderAll(); // 날짜가 바뀐 순간 전체 갱신
+      renderAll();
       return;
     }
 
-    // 기준일 텍스트는 항상 최신으로(요일 포함)
     const bd = document.getElementById("basisDate");
     if(bd) bd.textContent = displayKeyWithWeekday(nowKey);
 
-    // 오늘현황의 “YYYY-MM-DD (요일)”도 유지
-    renderTodayScreen();
-  }, 30 * 1000); // 30초마다 체크
+    renderAll();
+  }, 30 * 1000);
 }
 document.addEventListener("DOMContentLoaded", boot);
 </script>
 
-<!-- ✅ 이름 선택 (서브타이틀: '삼년뒤 영어스터디') -->
+<!-- ✅ 이름 선택 -->
 <div id="nameScreen" class="container">
   <div class="loginCard">
     <div class="loginTop">
       <div class="brand">
-        <h2 class="title">이름 선택</h2>
-        <p class="subtitle">삼년뒤 영어스터디</p>
+        <!-- ✅ 폰트사이즈 그대로(제목 크기 유지) -->
+        <h2 class="title">삼년뒤 영어스터디</h2>
+        <!-- ✅ 폰트사이즈 그대로(서브타이틀 크기 유지) -->
+        <p class="subtitle">이름을 선택하고 시작하기를 눌러주세요</p>
       </div>
 
       <div class="mascot" aria-hidden="true">
@@ -1028,15 +1012,13 @@ document.addEventListener("DOMContentLoaded", boot);
   </header>
 
   <div class="container">
-
-    <!-- 오늘 기록 -->
     <div id="record" class="screen">
       <div class="card">
         <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
         <div class="small">기준일: <span id="basisDate"></span> </div>
 
         <div class="note small" style="margin-top:10px;">
-          *오늘 마감시간까지(12시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 15,000원 확정/*토일은 학습 휴무(벌금 없음)
+          *오늘 마감시간까지(12시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 20,000 확정/*토일은 학습 휴무(벌금 없음)
         </div>
 
         <hr class="sep">
@@ -1044,7 +1026,6 @@ document.addEventListener("DOMContentLoaded", boot);
         <button class="sub" onclick="openSub('pattern', this)">B. 패턴시험</button>
         <button class="sub" onclick="openSub('speaking', this)">C. 문장말하기훈련</button>
 
-        <!-- A -->
         <div id="sub-word" class="card hidden" style="margin-top:12px;">
           <p style="margin:0 0 10px;"><b>단어 1초 말하기</b></p>
           <div class="small">번호 구간 선택 + 결과(복수 선택)</div>
@@ -1076,7 +1057,6 @@ document.addEventListener("DOMContentLoaded", boot);
           </div>
         </div>
 
-        <!-- B -->
         <div id="sub-pattern" class="card hidden" style="margin-top:12px;">
           <p style="margin:0 0 8px;"><b>패턴시험</b></p>
 
@@ -1105,7 +1085,6 @@ document.addEventListener("DOMContentLoaded", boot);
           </div>
         </div>
 
-        <!-- C -->
         <div id="sub-speaking" class="card hidden" style="margin-top:12px;">
           <p style="margin:0 0 8px;"><b>문장말하기훈련</b></p>
 
@@ -1136,7 +1115,6 @@ document.addEventListener("DOMContentLoaded", boot);
           </div>
         </div>
 
-        <!-- 오늘 벌금 -->
         <div class="card" style="margin-top:12px;">
           <div class="kpi">
             <div>
@@ -1148,7 +1126,6 @@ document.addEventListener("DOMContentLoaded", boot);
           <div id="todayFineDetail" class="small" style="margin-top:10px;"></div>
         </div>
 
-        <!-- 휴무 -->
         <div class="card" style="margin-top:12px;">
           <div class="small"><b>특별 기능</b> — 오늘 쉬고 싶다면?</div>
           <div class="small" style="margin-top:6px;">“오늘은 나 쉴게!”를 누르면, 나머지 두 사람이 모두 승인해야 오늘 벌금이 스킵돼요.</div>
@@ -1163,7 +1140,6 @@ document.addEventListener("DOMContentLoaded", boot);
 
     <div id="today" class="screen hidden"></div>
 
-    <!-- 4주 벌금 -->
     <div id="fine4w" class="screen hidden">
       <div class="card">
         <div class="row" style="align-items:flex-start;">
@@ -1180,7 +1156,6 @@ document.addEventListener("DOMContentLoaded", boot);
       <div id="fine4wBody"></div>
     </div>
 
-    <!-- 누적시간 -->
     <div id="accTime" class="screen hidden">
       <div class="card banner">
         <b>영어말하기훈련을 실제 얼마나 했는지 누적량이 표시됩니다</b>
