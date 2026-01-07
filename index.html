@@ -117,11 +117,15 @@
       border:1px solid rgba(199,210,254,.6);
     }
     .brand .title{
-      margin:0;
-      font-size:24px;
-      font-weight:950;
-      letter-spacing:-0.6px;
-      color:#111827;
+  margin:0;
+  font-size:18px;         /* 한 줄 고정 */
+  font-weight:950;
+  letter-spacing:-0.6px;
+  color:#111827;
+
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
     }
     .brand .subtitle{
       margin:6px 0 0;
@@ -1182,6 +1186,7 @@ document.addEventListener("DOMContentLoaded", boot);
 <div id="modalRoot" class="hidden"></div>
 </body>
 </html>
+
 
 
 
