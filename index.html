@@ -41,7 +41,6 @@
       border:1px solid #dbeafe;
     }
 
-    /* 체크박스 영역(모바일에서 화면 밖으로 안 나가게) */
     .chkGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;}
     .chkGrid label{
       display:flex;gap:8px;align-items:center;
@@ -55,11 +54,9 @@
       .chkGrid label{font-size:13px;padding:9px;}
     }
 
-    /* ✅ 저장/삭제 버튼을 문장말하기훈련처럼 세로로 크게 */
     .btnStack{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
     .btnStack button{width:100%;padding:14px 14px;font-size:16px;border-radius:14px;}
 
-    /* 모달 */
     .modalBack{
       position:fixed;inset:0;background:rgba(0,0,0,.38);
       display:flex;align-items:center;justify-content:center;
@@ -93,7 +90,6 @@
     }
     .footerActions > *{flex:1;min-width:160px;}
 
-    /* ✅ 인트로/이름선택 화면 iPhone 감성 */
     #nameScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;}
     #nameScreen.hidden{display:none !important;}
 
@@ -165,15 +161,12 @@
 <script>
 /** ===== 참가자/키 ===== */
 const USERS = ["오설란","오미진","김미나"];
-const KEY = "studyData";
+const KEY = "studyData";                 // 일자별 기록(초기화 대상)
 const LS_USER = "currentUser";
 const LS_REMEMBER = "rememberMe";
-const KEY_ACC = "accSpeakingMinutes";
+const KEY_ACC = "accSpeakingMinutes";    // 누적시간(이번 요청으로 초기화에도 포함)
 
-/** ✅ 결석 벌금(자동 부과) 설정 */
-const ABSENCE_FINE = 20000;     // 결석 벌금 2만원
-const DEADLINE_HOUR = 2;        // 새벽 2시
-
+/** (예전 버전/실험에서 쓰였을 가능성이 있는 키들까지 같이 정리) */
 const LEGACY_KEYS = [
   "studyData", "studyData_v1", "studyData_v2",
   "englishStudyAppData", "studyLogs", "glideStudyData",
@@ -204,7 +197,7 @@ function dateKeyPlusDays(isoKey, delta){
 function isWeekendKey(isoKey){
   const [y, m, d] = isoKey.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
-  const day = dt.getDay();
+  const day = dt.getDay(); // 0=일, 6=토
   return day === 0 || day === 6;
 }
 
@@ -230,44 +223,37 @@ function hasAnyRecord(row){
   return hasWord || hasPattern || hasSpeaking;
 }
 
-/** ✅ 결석 벌금 자동 부과(개인용: 본인만) */
-function enforceAbsenceFine(){
-  const now = new Date();
-  if(now.getHours() < DEADLINE_HOUR) return;
-
-  const u = getActiveUser();
-  if(!u) return;
-
-  const yesterdayKey = dateKeyPlusDays(todayKey(), -1);
-  if(isWeekendKey(yesterdayKey)) return;
-
-  const data = load();
-  const row = ensureRow(data, yesterdayKey, u);
-
-  if(row.absenceFineApplied) return;
-
-  if(!hasAnyRecord(row)){
-    row.absenceFineApplied = true;
-    row.absenceFine = ABSENCE_FINE;
-    row.absenceFineTs = Date.now();
-  }
-
-  save(data);
-}
-
-/** ===== 벌금 계산 ===== */
+/** ===== 벌금 계산 (개인용)
+ * - 주말(토/일) 0원
+ * - "오늘"은 새벽 2시 이후 + 기록 없음 => 결석 20,000원 자동
+ * - "과거 날짜"는 기록 없음이면 결석 20,000원(마감이 지났다고 간주)
+ * - 기록이 있으면 기존 규칙(단어/패턴/30분이하)만 계산
+ */
 function calcFineForDateWithData(data, dateKey, user){
   if(isWeekendKey(dateKey)) return 0;
 
   const row = data[dateKey]?.[user];
+  const has = hasAnyRecord(row);
 
-  let fine = 0;
-  if(row?.absenceFineApplied) fine += (row.absenceFine || ABSENCE_FINE);
-
-  if(!hasAnyRecord(row)){
-    return fine;
+  // ✅ 결석 벌금 규칙
+  if(!has){
+    const tKey = todayKey();
+    // 오늘이면 새벽2시 이후에만 결석 확정
+    if(dateKey === tKey){
+      const now = new Date();
+      const h = now.getHours();
+      const m = now.getMinutes();
+      if(h > 2 || (h === 2 && m >= 0)) return 20000;
+      return 0;
+    }
+    // 과거 날짜면 마감이 지났다고 보고 결석 확정
+    return 20000;
   }
 
+  // ✅ 기록이 있으면 기존 항목 벌금
+  let fine = 0;
+
+  // 단어 불합격 체크(한>영 불합격, 영>한 불합격) 1개당 5,000원
   let wordFail = 0;
   for(const a of (row.wordAttempts || [])){
     for(const o of (a.outcomes || [])){
@@ -276,8 +262,10 @@ function calcFineForDateWithData(data, dateKey, user){
   }
   fine += wordFail * 5000;
 
+  // 패턴 불합격 5,000원
   fine += (row.patternAttempts || []).filter(p => p.result === "불합격").length * 5000;
 
+  // 문장말하기 30분 이하 5,000원
   if(row.speakingTime === "30분 이하") fine += 5000;
 
   return fine;
@@ -287,7 +275,7 @@ function calcFineForDate(dateKey, user){
   return calcFineForDateWithData(data, dateKey, user);
 }
 
-/** ===== 누적시간(초기화해도 유지) ===== */
+/** ===== 누적시간 ===== */
 function loadAcc(){ return JSON.parse(localStorage.getItem(KEY_ACC)) || {}; }
 function saveAcc(acc){ localStorage.setItem(KEY_ACC, JSON.stringify(acc)); }
 
@@ -455,7 +443,7 @@ function deleteSelectedPattern(){
   if(!row || !(row.patternAttempts||[]).some(p=>p.day===day)){
     return showModal("삭제할 기록 없음", `오늘 저장된 "${day}" 기록이 없어요.`);
   }
-  deleteWord(day);
+  deletePattern(day);
 }
 
 /** ===== 말하기 ===== */
@@ -580,31 +568,31 @@ function renderTodayFine(){
     return;
   }
 
-  if(!hasAnyRecord(row) && !(row?.absenceFineApplied)){
-    detail.innerHTML = ``;
+  if(!hasAnyRecord(row)){
+    // 오늘 결석 벌금이 발동된 상태면 안내만 표시
+    if(fine === 20000){
+      detail.innerHTML = `새벽 2시 이후 기록이 없어서 <b>결석 20,000원</b>이 적용됐어요.`;
+    }else{
+      detail.innerHTML = ``;
+    }
     return;
   }
 
   let wordFail=0;
   for(const a of (row?.wordAttempts||[])){
-    for(const o of (a.outcomes || [])){
+    for(const o of (a.outcomes||[])){
       if(o==="한>영 불합격"||o==="영>한 불합격") wordFail++;
     }
   }
   const patternFail=(row?.patternAttempts||[]).filter(p=>p.result==="불합격").length;
   const speakUnder30=(row?.speakingTime==="30분 이하");
 
-  let absence = 0;
-  if(row?.absenceFineApplied) absence = (row.absenceFine || ABSENCE_FINE);
-
   detail.innerHTML =
-    (absence ? `결석 벌금 확정 → ${absence.toLocaleString()}원<br>` : ``) +
     `단어 불합격 체크 ${wordFail}개 → ${(wordFail*5000).toLocaleString()}원<br>` +
     `패턴 불합격 ${patternFail}회 → ${(patternFail*5000).toLocaleString()}원<br>` +
     `문장말하기 30분 이하 ${speakUnder30?"예":"아니오"} → ${(speakUnder30?5000:0).toLocaleString()}원`;
 }
 
-/** ✅ 오늘 현황: 본인만 */
 function renderTodayScreen(){
   const data = load();
   const k = todayKey();
@@ -627,13 +615,15 @@ function renderTodayScreen(){
   el.innerHTML = `
     <div class="card">
       <h3 style="margin:0 0 6px;">오늘 현황</h3>
-      <div class="small">${displayKeyWithWeekday(k)} </div>
+      <div class="small">${displayKeyWithWeekday(k)}</div>
     </div>
-    <div class="card"><b>${u}</b><br>${statusHTML}</div>
+    <div class="card">
+      <b>${u}</b><br>${statusHTML}
+    </div>
   `;
 }
 
-/** ✅ 4주 벌금: 본인만 */
+/** ✅ 4주 벌금(28일) 개인만 */
 function renderFine4w(){
   const baseKey = todayKey();
   const body = document.getElementById("fine4wBody");
@@ -644,29 +634,14 @@ function renderFine4w(){
   const u = getActiveUser();
 
   let sum = 0;
-  let absenceSum = 0;
-
   for(let i=0;i<28;i++){
     const dk = dateKeyPlusDays(baseKey, -i);
-
-    const row = data[dk]?.[u];
-    if(row?.absenceFineApplied){
-      absenceSum += (row.absenceFine || ABSENCE_FINE);
-    }
-
     sum += calcFineForDateWithData(data, dk, u);
   }
 
-  body.innerHTML += `
-    <div class="card">
-      <b>${u}</b><br>
-      총 벌금: <b>${sum.toLocaleString()}원</b>
-      ${absenceSum>0 ? `<div class="small" style="margin-top:6px;">결석 벌금: <b>${absenceSum.toLocaleString()}원</b></div>` : ``}
-    </div>
-  `;
+  body.innerHTML = `<div class="card"><b>${u}</b><br>총 벌금: <b>${sum.toLocaleString()}원</b></div>`;
 }
 
-/** ✅ 누적시간: 본인만 */
 function formatMinutes(mins){
   const h = Math.floor(mins/60);
   const m = mins % 60;
@@ -674,6 +649,8 @@ function formatMinutes(mins){
   if(m===0) return `${h}시간`;
   return `${h}시간 ${m}분`;
 }
+
+/** ✅ 누적시간 개인만 */
 function renderAcc(){
   const acc = loadAcc();
   const el = document.getElementById("accBody");
@@ -682,7 +659,6 @@ function renderAcc(){
 
   const u = getActiveUser();
   const mins = acc[u] || 0;
-
   el.innerHTML = `
     <div class="card">
       <b>${u}</b><br>
@@ -691,29 +667,19 @@ function renderAcc(){
   `;
 }
 
-/** ✅ 전체 데이터 초기화 버튼: 모든 사용자에게 표시 */
-function renderAdminControls(){
-  const adminBox = document.getElementById("adminControls");
-  if(!adminBox) return;
-  adminBox.classList.remove("hidden");
-}
-
 function renderAll(){
   if(!document.getElementById("app").classList.contains("hidden")){
-    renderAdminControls();
-
     renderWordTodayList();
     renderPatternTodayList();
     renderSpeakingToday();
     renderTodayFine();
-
     renderTodayScreen();
     renderFine4w();
     renderAcc();
   }
 }
 
-/** ✅ 초기화: 비번 그대로 유지(모든 사용자 접근 가능) */
+/** ✅ 전체 데이터 초기화: 모든 사용자에게 버튼 표시 + 비번 동일 + 누적시간도 함께 리셋 */
 function resetAll(){
   const txt = prompt("전체 데이터를 초기화하려면 비밀번호를 입력하세요");
   if(txt !== "20262026") return alert("비밀번호가 틀렸어요.");
@@ -721,7 +687,10 @@ function resetAll(){
   localStorage.removeItem(KEY);
   LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
 
-  alert("초기화 완료 (누적시간은 유지됩니다)");
+  // ✅ 이번 요청: 누적시간도 리셋
+  localStorage.removeItem(KEY_ACC);
+
+  alert("초기화 완료 (학습기록 + 누적시간 모두 초기화)");
   renderAll();
 }
 
@@ -741,6 +710,7 @@ function logout(){
   showModal("로그아웃 완료", "이름을 다시 선택해서 들어올 수 있어요.");
 }
 
+/** ===== 모달 ===== */
 function showModal(title, body){
   const root = document.getElementById("modalRoot");
   root.classList.remove("hidden");
@@ -791,6 +761,7 @@ function escapeHtml(s){
   return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
+/** ===== 시작 ===== */
 function startApp(){
   const sel = document.getElementById("userSelect");
   const rememberChk = document.getElementById("rememberMe");
@@ -812,11 +783,10 @@ function startApp(){
 
   showScreen("record");
   showWelcome();
-
-  enforceAbsenceFine();
   renderAll();
 }
 
+/** ===== 부팅 ===== */
 function boot(){
   buildWordRanges();
   buildPatternDays();
@@ -826,8 +796,6 @@ function boot(){
     document.getElementById("app").classList.remove("hidden");
     showScreen("record");
     showWelcome();
-
-    enforceAbsenceFine();
     renderAll();
   }
 
@@ -835,8 +803,6 @@ function boot(){
   setInterval(() => {
     const app = document.getElementById("app");
     if(!app || app.classList.contains("hidden")) return;
-
-    enforceAbsenceFine();
 
     const nowKey = todayKey();
     if(nowKey !== __lastDayKey){
@@ -860,7 +826,7 @@ document.addEventListener("DOMContentLoaded", boot);
     <div class="loginTop">
       <div class="brand">
         <h3 class="title">삼년뒤 영어스터디</h3>
-        <p class="subtitle"> 3년 뒤 우리의 영어운명은(남미,박사과정) </p>
+        <p class="subtitle">이름을 선택하고 시작하기를 눌러주세요</p>
       </div>
 
       <div class="mascot" aria-hidden="true">
@@ -922,13 +888,14 @@ document.addEventListener("DOMContentLoaded", boot);
   </header>
 
   <div class="container">
+    <!-- 오늘 기록 -->
     <div id="record" class="screen">
       <div class="card">
         <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
         <div class="small">기준일: <span id="basisDate"></span> </div>
 
         <div class="note small" style="margin-top:10px;">
-          *오늘 마감시간까지(새벽2시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 20,000원 확정/*토일은 학습 휴무(벌금 없음)
+          *오늘 마감시간까지(새벽 2시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 20,000원 확정/*토일은 학습 휴무(벌금 없음)
         </div>
 
         <hr class="sep">
@@ -936,6 +903,7 @@ document.addEventListener("DOMContentLoaded", boot);
         <button class="sub" onclick="openSub('pattern', this)">B. 패턴시험</button>
         <button class="sub" onclick="openSub('speaking', this)">C. 문장말하기훈련</button>
 
+        <!-- A -->
         <div id="sub-word" class="card hidden" style="margin-top:12px;">
           <p style="margin:0 0 10px;"><b>단어 1초 말하기</b></p>
           <div class="small">번호 구간 선택 + 결과(복수 선택)</div>
@@ -967,6 +935,7 @@ document.addEventListener("DOMContentLoaded", boot);
           </div>
         </div>
 
+        <!-- B -->
         <div id="sub-pattern" class="card hidden" style="margin-top:12px;">
           <p style="margin:0 0 8px;"><b>패턴시험</b></p>
 
@@ -995,6 +964,7 @@ document.addEventListener("DOMContentLoaded", boot);
           </div>
         </div>
 
+        <!-- C -->
         <div id="sub-speaking" class="card hidden" style="margin-top:12px;">
           <p style="margin:0 0 8px;"><b>문장말하기훈련</b></p>
 
@@ -1025,6 +995,7 @@ document.addEventListener("DOMContentLoaded", boot);
           </div>
         </div>
 
+        <!-- 오늘 벌금 -->
         <div class="card" style="margin-top:12px;">
           <div class="kpi">
             <div>
@@ -1041,6 +1012,7 @@ document.addEventListener("DOMContentLoaded", boot);
 
     <div id="today" class="screen hidden"></div>
 
+    <!-- 4주 벌금 -->
     <div id="fine4w" class="screen hidden">
       <div class="card">
         <div class="row" style="align-items:flex-start;">
@@ -1049,7 +1021,8 @@ document.addEventListener("DOMContentLoaded", boot);
             <div class="small">✅벌금은 4주 단위로 정산하여 계좌입금합니다(납입 재촉 예정)✅계좌번호: 3333-19-8585112 카카오뱅크 김미나</div>
           </div>
 
-          <div id="adminControls" class="hidden" style="text-align:right;">
+          <!-- ✅ 모든 사용자에게 노출 -->
+          <div style="text-align:right;">
             <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
           </div>
         </div>
@@ -1057,11 +1030,12 @@ document.addEventListener("DOMContentLoaded", boot);
       <div id="fine4wBody"></div>
     </div>
 
+    <!-- 누적시간 -->
     <div id="accTime" class="screen hidden">
       <div class="card banner">
         <b>영어말하기훈련을 실제 얼마나 했는지 누적량이 표시됩니다</b>
         <div class="small" style="margin-top:6px;">
-          ※ 이 누적 데이터는 “전체 데이터 초기화”를 눌러도 지워지지 않아요. 앱이 살아있는 한 계속 누적됩니다.
+          ※ (이번 버전) 테스트 누적도 초기화에 포함됩니다.
         </div>
       </div>
 
