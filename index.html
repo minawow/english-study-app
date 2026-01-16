@@ -210,6 +210,32 @@ function isWeekendKey(isoKey){
   return day === 0 || day === 6;
 }
 
+/** ✅ 현재시간 표시용 */
+function pad2(n){ return String(n).padStart(2,"0"); }
+function formatNowTime(){
+  const d = new Date();
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+/** ✅ 새벽2시 마감까지 남은시간 계산 */
+function getDeadlineLeft(){
+  const now = new Date();
+  const deadline = new Date(now);
+  deadline.setHours(DEADLINE_HOUR, 0, 0, 0);
+
+  // 2시 이전이면 오늘 2시까지 / 2시 이후면 다음날 2시까지(하지만 이미 마감 종료)
+  const msLeft = deadline.getTime() - now.getTime();
+  return msLeft;
+}
+function formatLeftMs(ms){
+  if(ms <= 0) return "마감 종료 (결석 자동 부과 완료)";
+  const total = Math.floor(ms/1000);
+  const h = Math.floor(total/3600);
+  const m = Math.floor((total%3600)/60);
+  const s = total%60;
+  return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
+}
+
 /** ===== 저장 ===== */
 function load(){ return JSON.parse(localStorage.getItem(KEY)) || {}; }
 function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
@@ -246,31 +272,22 @@ function isRestApproved(data, dateKey, requester){
   return !!(s && s.status === "approved");
 }
 
-/** ✅ 결석 벌금 자동 부과(새벽 2시 이후 실행)
- * - 새벽 2시가 지나면 "어제"가 마감됨
- * - 어제 기록 없으면 자동으로 absenceFine 저장
- * - 토/일은 제외
- * - 휴무 승인도 제외
- */
+/** ✅ 결석 벌금 자동 부과 */
 function enforceAbsenceFine(){
   const now = new Date();
-  if(now.getHours() < DEADLINE_HOUR) return; // 아직 마감 전
+  if(now.getHours() < DEADLINE_HOUR) return;
 
   const yesterdayKey = dateKeyPlusDays(todayKey(), -1);
-  if(isWeekendKey(yesterdayKey)) return; // 토/일 휴무
+  if(isWeekendKey(yesterdayKey)) return;
 
   const data = load();
 
   USERS.forEach(u=>{
     const row = ensureRow(data, yesterdayKey, u);
 
-    // 이미 결석 벌금 확정되어 있으면 재부과 X
     if(row.absenceFineApplied) return;
-
-    // 휴무 승인자는 결석 벌금 X
     if(isRestApproved(data, yesterdayKey, u)) return;
 
-    // 기록이 하나도 없으면 결석 벌금 확정
     if(!hasAnyRecord(row)){
       row.absenceFineApplied = true;
       row.absenceFine = ABSENCE_FINE;
@@ -288,11 +305,9 @@ function calcFineForDateWithData(data, dateKey, user){
 
   const row = data[dateKey]?.[user];
 
-  // ✅ 결석 벌금이 확정되어 있으면 무조건 포함
   let fine = 0;
   if(row?.absenceFineApplied) fine += (row.absenceFine || ABSENCE_FINE);
 
-  // 기록이 없더라도 "결석 벌금"만 있을 수 있으므로 여기서 바로 return X
   if(!hasAnyRecord(row)){
     return fine;
   }
@@ -595,6 +610,14 @@ function renderTodayFine(){
   const basis = document.getElementById("basisDate");
   if(basis) basis.textContent = displayKeyWithWeekday(k);
 
+  // ✅ 현재 시각 표시
+  const nowEl = document.getElementById("nowTime");
+  if(nowEl) nowEl.textContent = formatNowTime();
+
+  // ✅ 마감 카운트다운 표시
+  const leftEl = document.getElementById("deadlineLeft");
+  if(leftEl) leftEl.textContent = formatLeftMs(getDeadlineLeft());
+
   const fine = calcFineForDate(k, u);
   const big = document.getElementById("todayFineBig");
   if(big) big.textContent = fine.toLocaleString() + "원";
@@ -643,7 +666,7 @@ function renderRestMyStatus(){
   const k = todayKey();
   const data = load();
   const el = document.getElementById("restMyStatus");
-  const s = getRestState(data, k, u);
+  const s = data[k]?.__rest?.[u] || null;
   if(!el) return;
   if(!u){ el.textContent=""; return; }
   if(!s){
@@ -739,16 +762,32 @@ function renderFine4w(){
 
   USERS.forEach(u=>{
     let sum = 0;
+    let absenceSum = 0;
+
     for(let i=0;i<28;i++){
       const dk = dateKeyPlusDays(baseKey, -i);
+
+      const row = data[dk]?.[u];
+      if(row?.absenceFineApplied){
+        absenceSum += (row.absenceFine || ABSENCE_FINE);
+      }
+
       sum += calcFineForDateWithData(data, dk, u);
     }
-    perUser[u] = sum;
+
+    perUser[u] = { sum, absenceSum };
     totalAll += sum;
   });
 
   USERS.forEach(u=>{
-    body.innerHTML += `<div class="card"><b>${u}</b><br>총 벌금: <b>${perUser[u].toLocaleString()}원</b></div>`;
+    const obj = perUser[u];
+    body.innerHTML += `
+      <div class="card">
+        <b>${u}</b><br>
+        총 벌금: <b>${obj.sum.toLocaleString()}원</b>
+        ${obj.absenceSum>0 ? `<div class="small" style="margin-top:6px;">결석 벌금: <b>${obj.absenceSum.toLocaleString()}원</b></div>` : ``}
+      </div>
+    `;
   });
   body.innerHTML += `<div class="card"><b>전체 합계</b><br><b>${totalAll.toLocaleString()}원</b></div>`;
 }
@@ -908,7 +947,6 @@ function startApp(){
   showScreen("record");
   showWelcome();
 
-  // ✅ 시작할 때도 한번 결석 체크
   enforceAbsenceFine();
   renderAll();
 }
@@ -932,7 +970,6 @@ function boot(){
     const app = document.getElementById("app");
     if(!app || app.classList.contains("hidden")) return;
 
-    // ✅ 결석 자동 부과 체크
     enforceAbsenceFine();
 
     const nowKey = todayKey();
@@ -945,8 +982,9 @@ function boot(){
     const bd = document.getElementById("basisDate");
     if(bd) bd.textContent = displayKeyWithWeekday(nowKey);
 
-    renderAll();
-  }, 30 * 1000);
+    // ✅ 지금시간/카운트다운은 1초 단위처럼 보이도록 여기서도 refresh
+    renderTodayFine();
+  }, 1000); // ✅ 1초마다 갱신(시계+카운트다운용)
 }
 document.addEventListener("DOMContentLoaded", boot);
 </script>
@@ -1022,9 +1060,13 @@ document.addEventListener("DOMContentLoaded", boot);
     <div id="record" class="screen">
       <div class="card">
         <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
-        <div class="small">기준일: <span id="basisDate"></span> </div>
+        <div class="small">기준일: <span id="basisDate"></span></div>
 
+        <!-- ✅ 실시간 시계 & 카운트다운 -->
         <div class="note small" style="margin-top:10px;">
+          <div><b>현재 시각:</b> <span id="nowTime"></span></div>
+          <div style="margin-top:6px;"><b>마감까지 남은 시간:</b> <span id="deadlineLeft"></span></div>
+          <hr class="sep">
           *오늘 마감시간까지(새벽2시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 20,000원 확정/*토일은 학습 휴무(벌금 없음)
         </div>
 
