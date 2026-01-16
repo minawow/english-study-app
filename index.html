@@ -161,10 +161,16 @@
 <script>
 /** ===== 참가자/키 ===== */
 const USERS = ["오설란","오미진","김미나"];
-const KEY = "studyData";                 // 일자별 기록(초기화 대상)
+const KEY = "studyData";                 // 일자별 기록
 const LS_USER = "currentUser";
 const LS_REMEMBER = "rememberMe";
-const KEY_ACC = "accSpeakingMinutes";    // 누적시간(이번 요청으로 초기화에도 포함)
+const KEY_ACC = "accSpeakingMinutes";    // 말하기훈련 누적시간
+
+// 벌금 기준 시작일 (이 날짜 이전은 벌금 0으로 봄)
+const LS_FINE_START = "fineStartDate";
+
+// 누적시간 한 번만 리셋용 플래그
+const LS_ACC_RESET_ONCE = "accResetOnceDone";
 
 /** (예전 버전/실험에서 쓰였을 가능성이 있는 키들까지 같이 정리) */
 const LEGACY_KEYS = [
@@ -225,20 +231,21 @@ function hasAnyRecord(row){
 
 /** ===== 벌금 계산 (개인용)
  * - 주말(토/일) 0원
- * - "오늘"은 새벽 2시 이후 + 기록 없음 => 결석 20,000원 자동
- * - "과거 날짜"는 기록 없음이면 결석 20,000원(마감이 지났다고 간주)
- * - 기록이 있으면 기존 규칙(단어/패턴/30분이하)만 계산
+ * - 벌금 기준 시작일 이전 날짜는 항상 0원
+ * - 기준일 이후:
+ *   - "오늘"은 새벽 2시 이후 + 기록 없음 => 결석 20,000원
+ *   - "과거 날짜"는 기록 없음이면 결석 20,000원
+ *   - 기록이 있으면 단어/패턴/30분 이하만 계산
  */
 function calcFineForDateWithData(data, dateKey, user){
   if(isWeekendKey(dateKey)) return 0;
 
   const row = data[dateKey]?.[user];
   const has = hasAnyRecord(row);
+  const tKey = todayKey();
 
-  // ✅ 결석 벌금 규칙
   if(!has){
-    const tKey = todayKey();
-    // 오늘이면 새벽2시 이후에만 결석 확정
+    // 오늘: 새벽 2시 이후면 결석
     if(dateKey === tKey){
       const now = new Date();
       const h = now.getHours();
@@ -246,11 +253,10 @@ function calcFineForDateWithData(data, dateKey, user){
       if(h > 2 || (h === 2 && m >= 0)) return 20000;
       return 0;
     }
-    // 과거 날짜면 마감이 지났다고 보고 결석 확정
+    // 과거 날짜: 마감이 지났다고 보고 결석
     return 20000;
   }
 
-  // ✅ 기록이 있으면 기존 항목 벌금
   let fine = 0;
 
   // 단어 불합격 체크(한>영 불합격, 영>한 불합격) 1개당 5,000원
@@ -270,8 +276,12 @@ function calcFineForDateWithData(data, dateKey, user){
 
   return fine;
 }
+
 function calcFineForDate(dateKey, user){
   const data = load();
+  const start = localStorage.getItem(LS_FINE_START);
+  // 벌금 기준일 이전은 항상 0원
+  if(start && dateKey < start) return 0;
   return calcFineForDateWithData(data, dateKey, user);
 }
 
@@ -569,7 +579,6 @@ function renderTodayFine(){
   }
 
   if(!hasAnyRecord(row)){
-    // 오늘 결석 벌금이 발동된 상태면 안내만 표시
     if(fine === 20000){
       detail.innerHTML = `새벽 2시 이후 기록이 없어서 <b>결석 20,000원</b>이 적용됐어요.`;
     }else{
@@ -630,13 +639,11 @@ function renderFine4w(){
   if(!body) return;
   body.innerHTML = "";
 
-  const data = load();
   const u = getActiveUser();
-
   let sum = 0;
   for(let i=0;i<28;i++){
     const dk = dateKeyPlusDays(baseKey, -i);
-    sum += calcFineForDateWithData(data, dk, u);
+    sum += calcFineForDate(dk, u);
   }
 
   body.innerHTML = `<div class="card"><b>${u}</b><br>총 벌금: <b>${sum.toLocaleString()}원</b></div>`;
@@ -679,7 +686,11 @@ function renderAll(){
   }
 }
 
-/** ✅ 전체 데이터 초기화: 모든 사용자에게 버튼 표시 + 비번 동일 + 누적시간도 함께 리셋 */
+/** ✅ 전체 데이터 초기화: 모든 사용자에게 버튼 표시
+ *  - 학습기록 초기화
+ *  - 벌금 기준일을 "오늘"로 재설정 → 4주 벌금 0원에서 시작
+ *  - 누적시간은 유지 (이전 버전처럼)
+ */
 function resetAll(){
   const txt = prompt("전체 데이터를 초기화하려면 비밀번호를 입력하세요");
   if(txt !== "20262026") return alert("비밀번호가 틀렸어요.");
@@ -687,10 +698,10 @@ function resetAll(){
   localStorage.removeItem(KEY);
   LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
 
-  // ✅ 이번 요청: 누적시간도 리셋
-  localStorage.removeItem(KEY_ACC);
+  // 벌금 기준일을 오늘로 설정 → 이전 날짜는 벌금 0 처리
+  localStorage.setItem(LS_FINE_START, todayKey());
 
-  alert("초기화 완료 (학습기록 + 누적시간 모두 초기화)");
+  alert("초기화 완료 (학습기록 삭제 & 벌금 기준일을 오늘로 리셋)");
   renderAll();
 }
 
@@ -790,6 +801,17 @@ function startApp(){
 function boot(){
   buildWordRanges();
   buildPatternDays();
+
+  // 🔁 이번 버전 딱 한 번: 누적시간 초기화
+  if(!localStorage.getItem(LS_ACC_RESET_ONCE)){
+    localStorage.removeItem(KEY_ACC);
+    localStorage.setItem(LS_ACC_RESET_ONCE, "1");
+  }
+
+  // 벌금 기준 시작일이 없으면 오늘로 설정 (앱 처음 쓴 시점)
+  if(!localStorage.getItem(LS_FINE_START)){
+    localStorage.setItem(LS_FINE_START, todayKey());
+  }
 
   if(remembered() && currentUser()){
     document.getElementById("nameScreen").classList.add("hidden");
@@ -1021,7 +1043,6 @@ document.addEventListener("DOMContentLoaded", boot);
             <div class="small">✅벌금은 4주 단위로 정산하여 계좌입금합니다(납입 재촉 예정)✅계좌번호: 3333-19-8585112 카카오뱅크 김미나</div>
           </div>
 
-          <!-- ✅ 모든 사용자에게 노출 -->
           <div style="text-align:right;">
             <button class="danger" onclick="resetAll()">⚠ 전체 데이터 초기화</button>
           </div>
@@ -1035,7 +1056,7 @@ document.addEventListener("DOMContentLoaded", boot);
       <div class="card banner">
         <b>영어말하기훈련을 실제 얼마나 했는지 누적량이 표시됩니다</b>
         <div class="small" style="margin-top:6px;">
-          ※ (이번 버전) 테스트 누적도 초기화에 포함됩니다.
+          ※ 이 누적 데이터는 “전체 데이터 초기화”를 눌러도 지워지지 않아요. 앱이 살아있는 한 계속 누적됩니다.
         </div>
       </div>
 
