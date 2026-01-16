@@ -95,8 +95,6 @@
 
     /* ✅ 인트로/이름선택 화면 iPhone 감성 */
     #nameScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;}
-    /* ✅ (중요) #nameScreen이 id 스타일로 display:flex를 갖고 있어서,
-       hidden이 안 먹던 문제를 해결: 예전처럼 "새 화면처럼" 전환됩니다 */
     #nameScreen.hidden{display:none !important;}
 
     .loginCard{
@@ -117,15 +115,14 @@
       border:1px solid rgba(199,210,254,.6);
     }
     .brand .title{
-  margin:0;
-  font-size:18px;         /* 한 줄 고정 */
-  font-weight:950;
-  letter-spacing:-0.6px;
-  color:#111827;
-
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+      margin:0;
+      font-size:18px;
+      font-weight:950;
+      letter-spacing:-0.6px;
+      color:#111827;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .brand .subtitle{
       margin:6px 0 0;
@@ -170,12 +167,15 @@
 const USERS = ["오설란","오미진","김미나"];
 const ADMIN = "김미나";
 
-const KEY = "studyData";                 // 일자별 기록(초기화 대상)
+const KEY = "studyData";
 const LS_USER = "currentUser";
 const LS_REMEMBER = "rememberMe";
-const KEY_ACC = "accSpeakingMinutes";    // 누적시간(초기화해도 유지)
+const KEY_ACC = "accSpeakingMinutes";
 
-/** (예전 버전/실험에서 쓰였을 가능성이 있는 키들까지 같이 정리) */
+/** ✅ 결석 벌금(자동 부과) 설정 */
+const ABSENCE_FINE = 20000;     // 결석 벌금 2만원
+const DEADLINE_HOUR = 2;        // 새벽 2시
+
 const LEGACY_KEYS = [
   "studyData", "studyData_v1", "studyData_v2",
   "englishStudyAppData", "studyLogs", "glideStudyData",
@@ -188,10 +188,8 @@ function todayKey(){
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`; // ✅ 로컬 기준 YYYY-MM-DD
+  return `${y}-${m}-${day}`;
 }
-
-/** ✅ 화면 표시용: YYYY-MM-DD (요일) */
 function displayKeyWithWeekday(isoKey){
   const [y, m, d] = isoKey.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
@@ -200,19 +198,15 @@ function displayKeyWithWeekday(isoKey){
   const dd = String(d).padStart(2, "0");
   return `${y}-${mm}-${dd} (${wd})`;
 }
-
-/** ✅ iOS Safari 날짜 파싱/ISO 변환으로 하루 밀리는 문제 방지(UTC 안전) */
 function dateKeyPlusDays(isoKey, delta){
   const [y, m, d] = isoKey.split("-").map(Number);
   const utc = Date.UTC(y, m - 1, d) + (delta * 86400000);
   return new Date(utc).toISOString().slice(0, 10);
 }
-
-/** ✅ 주말(토/일) 판별 */
 function isWeekendKey(isoKey){
   const [y, m, d] = isoKey.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
-  const day = dt.getDay(); // 0=일, 6=토
+  const day = dt.getDay();
   return day === 0 || day === 6;
 }
 
@@ -251,58 +245,57 @@ function isRestApproved(data, dateKey, requester){
   const s = getRestState(data, dateKey, requester);
   return !!(s && s.status === "approved");
 }
-function requestRest(){
-  const u = getActiveUser();
-  if(!u) return showModal("이름을 먼저 선택해주세요", "이름 선택 후 이용할 수 있어요.");
 
-  const k = todayKey();
+/** ✅ 결석 벌금 자동 부과(새벽 2시 이후 실행)
+ * - 새벽 2시가 지나면 "어제"가 마감됨
+ * - 어제 기록 없으면 자동으로 absenceFine 저장
+ * - 토/일은 제외
+ * - 휴무 승인도 제외
+ */
+function enforceAbsenceFine(){
+  const now = new Date();
+  if(now.getHours() < DEADLINE_HOUR) return; // 아직 마감 전
+
+  const yesterdayKey = dateKeyPlusDays(todayKey(), -1);
+  if(isWeekendKey(yesterdayKey)) return; // 토/일 휴무
+
   const data = load();
-  const rest = ensureRestObj(data, k);
 
-  if(rest[u]?.status === "approved"){
-    return showModal("이미 휴무 승인 완료!", "오늘 벌금은 스킵됩니다 😴");
-  }
-  if(rest[u]?.status === "pending"){
-    return showModal("이미 휴무 요청이 있어요", "다른 두 사람이 승인하면 벌금이 스킵돼요.");
-  }
+  USERS.forEach(u=>{
+    const row = ensureRow(data, yesterdayKey, u);
 
-  rest[u] = { requester:u, approvals:[], status:"pending", ts:Date.now() };
+    // 이미 결석 벌금 확정되어 있으면 재부과 X
+    if(row.absenceFineApplied) return;
+
+    // 휴무 승인자는 결석 벌금 X
+    if(isRestApproved(data, yesterdayKey, u)) return;
+
+    // 기록이 하나도 없으면 결석 벌금 확정
+    if(!hasAnyRecord(row)){
+      row.absenceFineApplied = true;
+      row.absenceFine = ABSENCE_FINE;
+      row.absenceFineTs = Date.now();
+    }
+  });
+
   save(data);
-  renderAll();
-  showModal("휴무 요청 완료", "다른 두 사람이 ‘승인’하면 벌금이 스킵돼요.");
-}
-function approveRest(requester){
-  const me = getActiveUser();
-  const k = todayKey();
-  const data = load();
-  const rest = ensureRestObj(data, k);
-  const state = rest[requester];
-  if(!state) return;
-  if(state.status === "approved") return;
-
-  if(me === requester){
-    return showModal("본인은 승인할 수 없어요", "다른 두 사람이 승인해야 합니다.");
-  }
-  if(!state.approvals.includes(me)) state.approvals.push(me);
-
-  const needed = USERS.filter(x => x !== requester);
-  const ok = needed.every(x => state.approvals.includes(x));
-  if(ok) state.status = "approved";
-
-  rest[requester] = state;
-  save(data);
-  renderAll();
 }
 
-/** ===== 벌금 계산: “기록 없음”이면 무조건 0원(자동 부과 제거) + 주말(토/일) 0원 ===== */
+/** ===== 벌금 계산 ===== */
 function calcFineForDateWithData(data, dateKey, user){
   if(isWeekendKey(dateKey)) return 0;
   if(isRestApproved(data, dateKey, user)) return 0;
 
   const row = data[dateKey]?.[user];
-  if(!hasAnyRecord(row)) return 0;
 
+  // ✅ 결석 벌금이 확정되어 있으면 무조건 포함
   let fine = 0;
+  if(row?.absenceFineApplied) fine += (row.absenceFine || ABSENCE_FINE);
+
+  // 기록이 없더라도 "결석 벌금"만 있을 수 있으므로 여기서 바로 return X
+  if(!hasAnyRecord(row)){
+    return fine;
+  }
 
   let wordFail = 0;
   for(const a of (row.wordAttempts || [])){
@@ -524,7 +517,6 @@ function saveSpeaking(){
   addAcc(u, timeToMinutes(t));
   renderAll();
 }
-
 function deleteSpeaking(){
   if(!confirm("삭제할까요? (누적시간도 함께 되돌립니다)")) return;
   const u = getActiveUser();
@@ -621,21 +613,26 @@ function renderTodayFine(){
     detail.innerHTML = `😴 <b>휴무 승인 완료</b> — 오늘 벌금은 스킵됩니다.`;
     return;
   }
-  if(!hasAnyRecord(row)){
+
+  if(!hasAnyRecord(row) && !(row?.absenceFineApplied)){
     detail.innerHTML = ``;
     return;
   }
 
   let wordFail=0;
   for(const a of (row?.wordAttempts||[])){
-    for(const o of (a.outcomes||[])){
+    for(const o of (a.outcomes || [])){
       if(o==="한>영 불합격"||o==="영>한 불합격") wordFail++;
     }
   }
   const patternFail=(row?.patternAttempts||[]).filter(p=>p.result==="불합격").length;
   const speakUnder30=(row?.speakingTime==="30분 이하");
 
+  let absence = 0;
+  if(row?.absenceFineApplied) absence = (row.absenceFine || ABSENCE_FINE);
+
   detail.innerHTML =
+    (absence ? `결석 벌금 확정 → ${absence.toLocaleString()}원<br>` : ``) +
     `단어 불합격 체크 ${wordFail}개 → ${(wordFail*5000).toLocaleString()}원<br>` +
     `패턴 불합격 ${patternFail}회 → ${(patternFail*5000).toLocaleString()}원<br>` +
     `문장말하기 30분 이하 ${speakUnder30?"예":"아니오"} → ${(speakUnder30?5000:0).toLocaleString()}원`;
@@ -910,6 +907,9 @@ function startApp(){
 
   showScreen("record");
   showWelcome();
+
+  // ✅ 시작할 때도 한번 결석 체크
+  enforceAbsenceFine();
   renderAll();
 }
 
@@ -922,6 +922,8 @@ function boot(){
     document.getElementById("app").classList.remove("hidden");
     showScreen("record");
     showWelcome();
+
+    enforceAbsenceFine();
     renderAll();
   }
 
@@ -929,6 +931,9 @@ function boot(){
   setInterval(() => {
     const app = document.getElementById("app");
     if(!app || app.classList.contains("hidden")) return;
+
+    // ✅ 결석 자동 부과 체크
+    enforceAbsenceFine();
 
     const nowKey = todayKey();
     if(nowKey !== __lastDayKey){
@@ -951,10 +956,7 @@ document.addEventListener("DOMContentLoaded", boot);
   <div class="loginCard">
     <div class="loginTop">
       <div class="brand">
-        <!-- ✅ 폰트사이즈 그대로(제목 크기 유지) -->
-        <h3 class="title">삼년뒤 
-          영어스터디</h3>
-        <!-- ✅ 폰트사이즈 그대로(서브타이틀 크기 유지) -->
+        <h3 class="title">삼년뒤 영어스터디</h3>
         <p class="subtitle"> 3년 뒤 우리의 영어운명은(남미,박사과정) </p>
       </div>
 
@@ -1023,7 +1025,7 @@ document.addEventListener("DOMContentLoaded", boot);
         <div class="small">기준일: <span id="basisDate"></span> </div>
 
         <div class="note small" style="margin-top:10px;">
-          *오늘 마감시간까지(12시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 20,000원 확정/*토일은 학습 휴무(벌금 없음)
+          *오늘 마감시간까지(새벽2시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 20,000원 확정/*토일은 학습 휴무(벌금 없음)
         </div>
 
         <hr class="sep">
@@ -1186,9 +1188,3 @@ document.addEventListener("DOMContentLoaded", boot);
 <div id="modalRoot" class="hidden"></div>
 </body>
 </html>
-
-
-
-
-
-
