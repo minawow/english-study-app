@@ -166,7 +166,8 @@ const LS_USER = "currentUser";
 const LS_REMEMBER = "rememberMe";
 const KEY_ACC = "accSpeakingMinutes";    // 말하기훈련 누적시간
 
-// 벌금 기준 시작일 (이 날짜 이전은 벌금 0으로 봄)
+// ✅ 스터디 시작일(고정): 2026-01-19부터 벌금 계산 시작
+const STUDY_START = "2026-01-19";
 const LS_FINE_START = "fineStartDate";
 
 // 누적시간 한 번만 리셋용 플래그
@@ -207,6 +208,15 @@ function isWeekendKey(isoKey){
   return day === 0 || day === 6;
 }
 
+/** ✅ 마감(다음날 새벽 2시) 지나면 결석 벌금 확정 */
+function isAfterDeadline(dateKey){
+  const [y,m,d] = dateKey.split("-").map(Number);
+  // dateKey의 다음날 02:00 (로컬)
+  const deadline = new Date(y, m-1, d, 2, 0, 0, 0);
+  deadline.setDate(deadline.getDate() + 1);
+  return new Date() >= deadline;
+}
+
 /** ===== 저장 ===== */
 function load(){ return JSON.parse(localStorage.getItem(KEY)) || {}; }
 function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
@@ -231,30 +241,20 @@ function hasAnyRecord(row){
 
 /** ===== 벌금 계산 (개인용)
  * - 주말(토/일) 0원
- * - 벌금 기준 시작일 이전 날짜는 항상 0원
- * - 기준일 이후:
- *   - "오늘"은 새벽 2시 이후 + 기록 없음 => 결석 20,000원
- *   - "과거 날짜"는 기록 없음이면 결석 20,000원
- *   - 기록이 있으면 단어/패턴/30분 이하만 계산
+ * - 2026-01-19 이전은 0원
+ * - 기록 없음:
+ *   - 마감(다음날 새벽 2시) 이후에만 결석 20,000원
+ * - 기록 있으면 기존 규칙대로 계산
  */
 function calcFineForDateWithData(data, dateKey, user){
   if(isWeekendKey(dateKey)) return 0;
 
   const row = data[dateKey]?.[user];
   const has = hasAnyRecord(row);
-  const tKey = todayKey();
 
   if(!has){
-    // 오늘: 새벽 2시 이후면 결석
-    if(dateKey === tKey){
-      const now = new Date();
-      const h = now.getHours();
-      const m = now.getMinutes();
-      if(h > 2 || (h === 2 && m >= 0)) return 20000;
-      return 0;
-    }
-    // 과거 날짜: 마감이 지났다고 보고 결석
-    return 20000;
+    // ✅ 마감 이후에만 결석 벌금
+    return isAfterDeadline(dateKey) ? 20000 : 0;
   }
 
   let fine = 0;
@@ -279,9 +279,11 @@ function calcFineForDateWithData(data, dateKey, user){
 
 function calcFineForDate(dateKey, user){
   const data = load();
-  const start = localStorage.getItem(LS_FINE_START);
-  // 벌금 기준일 이전은 항상 0원
-  if(start && dateKey < start) return 0;
+  const start = localStorage.getItem(LS_FINE_START) || STUDY_START;
+
+  // ✅ 시작일 이전은 항상 0원
+  if(dateKey < start) return 0;
+
   return calcFineForDateWithData(data, dateKey, user);
 }
 
@@ -573,6 +575,13 @@ function renderTodayFine(){
   const detail = document.getElementById("todayFineDetail");
   if(!detail) return;
 
+  // 시작일 이전은 0원
+  const start = localStorage.getItem(LS_FINE_START) || STUDY_START;
+  if(k < start){
+    detail.innerHTML = `스터디 시작일(${start}) 이전이라 벌금 정산이 없습니다. <b>(0원)</b>`;
+    return;
+  }
+
   if(isWeekendKey(k)){
     detail.innerHTML = `토/일은 휴무라서 벌금 정산이 없습니다. <b>(0원)</b>`;
     return;
@@ -580,7 +589,7 @@ function renderTodayFine(){
 
   if(!hasAnyRecord(row)){
     if(fine === 20000){
-      detail.innerHTML = `새벽 2시 이후 기록이 없어서 <b>결석 20,000원</b>이 적용됐어요.`;
+      detail.innerHTML = `마감(다음날 새벽 2시) 이후에도 기록이 없어서 <b>결석 20,000원</b>이 적용됐어요.`;
     }else{
       detail.innerHTML = ``;
     }
@@ -613,7 +622,11 @@ function renderTodayScreen(){
   const ok = hasAnyRecord(row);
 
   let statusHTML = "";
-  if(isWeekendKey(k)){
+  const start = localStorage.getItem(LS_FINE_START) || STUDY_START;
+
+  if(k < start){
+    statusHTML = `<span class="ok">⏳ 스터디 시작 전</span>`;
+  }else if(isWeekendKey(k)){
     statusHTML = `<span class="ok">😴 주말 휴무</span>`;
   }else if(ok){
     statusHTML = `<span class="ok">⭕ 기록 있음</span>`;
@@ -686,10 +699,10 @@ function renderAll(){
   }
 }
 
-/** ✅ 전체 데이터 초기화: 모든 사용자에게 버튼 표시
+/** ✅ 전체 데이터 초기화
  *  - 학습기록 초기화
- *  - 벌금 기준일을 "오늘"로 재설정 → 4주 벌금 0원에서 시작
- *  - 누적시간은 유지 (이전 버전처럼)
+ *  - 벌금 시작일은 '2026-01-19' 유지(요구사항)
+ *  - 누적시간은 유지
  */
 function resetAll(){
   const txt = prompt("전체 데이터를 초기화하려면 비밀번호를 입력하세요");
@@ -698,10 +711,10 @@ function resetAll(){
   localStorage.removeItem(KEY);
   LEGACY_KEYS.forEach(k => localStorage.removeItem(k));
 
-  // 벌금 기준일을 오늘로 설정 → 이전 날짜는 벌금 0 처리
-  localStorage.setItem(LS_FINE_START, todayKey());
+  // ✅ 시작일 고정 유지
+  localStorage.setItem(LS_FINE_START, STUDY_START);
 
-  alert("초기화 완료 (학습기록 삭제 & 벌금 기준일을 오늘로 리셋)");
+  alert("초기화 완료 (학습기록 삭제 & 시작일은 2026-01-19로 유지)");
   renderAll();
 }
 
@@ -802,16 +815,10 @@ function boot(){
   buildWordRanges();
   buildPatternDays();
 
-  // 🔁 이번 버전 딱 한 번: 누적시간 초기화
-  if(!localStorage.getItem(LS_ACC_RESET_ONCE)){
-    localStorage.removeItem(KEY_ACC);
-    localStorage.setItem(LS_ACC_RESET_ONCE, "1");
-  }
+  // ✅ 누적시간은 리셋하지 않음(요구사항 유지)
 
-  // 벌금 기준 시작일이 없으면 오늘로 설정 (앱 처음 쓴 시점)
-  if(!localStorage.getItem(LS_FINE_START)){
-    localStorage.setItem(LS_FINE_START, todayKey());
-  }
+  // ✅ 벌금 시작일은 항상 2026-01-19로 고정
+  localStorage.setItem(LS_FINE_START, STUDY_START);
 
   if(remembered() && currentUser()){
     document.getElementById("nameScreen").classList.add("hidden");
