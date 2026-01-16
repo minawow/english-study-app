@@ -165,8 +165,6 @@
 <script>
 /** ===== 참가자/키 ===== */
 const USERS = ["오설란","오미진","김미나"];
-const ADMIN = "김미나";
-
 const KEY = "studyData";
 const LS_USER = "currentUser";
 const LS_REMEMBER = "rememberMe";
@@ -210,32 +208,6 @@ function isWeekendKey(isoKey){
   return day === 0 || day === 6;
 }
 
-/** ✅ 현재시간 표시용 */
-function pad2(n){ return String(n).padStart(2,"0"); }
-function formatNowTime(){
-  const d = new Date();
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
-}
-
-/** ✅ 새벽2시 마감까지 남은시간 계산 */
-function getDeadlineLeft(){
-  const now = new Date();
-  const deadline = new Date(now);
-  deadline.setHours(DEADLINE_HOUR, 0, 0, 0);
-
-  // 2시 이전이면 오늘 2시까지 / 2시 이후면 다음날 2시까지(하지만 이미 마감 종료)
-  const msLeft = deadline.getTime() - now.getTime();
-  return msLeft;
-}
-function formatLeftMs(ms){
-  if(ms <= 0) return "마감 종료 (결석 자동 부과 완료)";
-  const total = Math.floor(ms/1000);
-  const h = Math.floor(total/3600);
-  const m = Math.floor((total%3600)/60);
-  const s = total%60;
-  return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
-}
-
 /** ===== 저장 ===== */
 function load(){ return JSON.parse(localStorage.getItem(KEY)) || {}; }
 function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
@@ -258,42 +230,27 @@ function hasAnyRecord(row){
   return hasWord || hasPattern || hasSpeaking;
 }
 
-/** ===== 휴무 요청 ===== */
-function ensureRestObj(data, dateKey){
-  data[dateKey] ??= {};
-  data[dateKey].__rest ??= {};
-  return data[dateKey].__rest;
-}
-function getRestState(data, dateKey, requester){
-  return data[dateKey]?.__rest?.[requester] || null;
-}
-function isRestApproved(data, dateKey, requester){
-  const s = getRestState(data, dateKey, requester);
-  return !!(s && s.status === "approved");
-}
-
-/** ✅ 결석 벌금 자동 부과 */
+/** ✅ 결석 벌금 자동 부과(개인용: 본인만) */
 function enforceAbsenceFine(){
   const now = new Date();
   if(now.getHours() < DEADLINE_HOUR) return;
+
+  const u = getActiveUser();
+  if(!u) return;
 
   const yesterdayKey = dateKeyPlusDays(todayKey(), -1);
   if(isWeekendKey(yesterdayKey)) return;
 
   const data = load();
+  const row = ensureRow(data, yesterdayKey, u);
 
-  USERS.forEach(u=>{
-    const row = ensureRow(data, yesterdayKey, u);
+  if(row.absenceFineApplied) return;
 
-    if(row.absenceFineApplied) return;
-    if(isRestApproved(data, yesterdayKey, u)) return;
-
-    if(!hasAnyRecord(row)){
-      row.absenceFineApplied = true;
-      row.absenceFine = ABSENCE_FINE;
-      row.absenceFineTs = Date.now();
-    }
-  });
+  if(!hasAnyRecord(row)){
+    row.absenceFineApplied = true;
+    row.absenceFine = ABSENCE_FINE;
+    row.absenceFineTs = Date.now();
+  }
 
   save(data);
 }
@@ -301,7 +258,6 @@ function enforceAbsenceFine(){
 /** ===== 벌금 계산 ===== */
 function calcFineForDateWithData(data, dateKey, user){
   if(isWeekendKey(dateKey)) return 0;
-  if(isRestApproved(data, dateKey, user)) return 0;
 
   const row = data[dateKey]?.[user];
 
@@ -610,14 +566,6 @@ function renderTodayFine(){
   const basis = document.getElementById("basisDate");
   if(basis) basis.textContent = displayKeyWithWeekday(k);
 
-  // ✅ 현재 시각 표시
-  const nowEl = document.getElementById("nowTime");
-  if(nowEl) nowEl.textContent = formatNowTime();
-
-  // ✅ 마감 카운트다운 표시
-  const leftEl = document.getElementById("deadlineLeft");
-  if(leftEl) leftEl.textContent = formatLeftMs(getDeadlineLeft());
-
   const fine = calcFineForDate(k, u);
   const big = document.getElementById("todayFineBig");
   if(big) big.textContent = fine.toLocaleString() + "원";
@@ -629,11 +577,6 @@ function renderTodayFine(){
 
   if(isWeekendKey(k)){
     detail.innerHTML = `토/일은 휴무라서 벌금 정산이 없습니다. <b>(0원)</b>`;
-    return;
-  }
-
-  if(isRestApproved(data, k, u)){
-    detail.innerHTML = `😴 <b>휴무 승인 완료</b> — 오늘 벌금은 스킵됩니다.`;
     return;
   }
 
@@ -661,94 +604,36 @@ function renderTodayFine(){
     `문장말하기 30분 이하 ${speakUnder30?"예":"아니오"} → ${(speakUnder30?5000:0).toLocaleString()}원`;
 }
 
-function renderRestMyStatus(){
-  const u = getActiveUser();
-  const k = todayKey();
-  const data = load();
-  const el = document.getElementById("restMyStatus");
-  const s = data[k]?.__rest?.[u] || null;
-  if(!el) return;
-  if(!u){ el.textContent=""; return; }
-  if(!s){
-    el.innerHTML = `<span class="pill">휴무 요청 없음</span>`;
-    return;
-  }
-  if(s.status==="approved"){
-    el.innerHTML = `<span class="pill" style="background:#dcfce7;color:#166534;">휴무 승인 완료 ✅ (벌금 스킵)</span>`;
-    return;
-  }
-  const needed = USERS.filter(x=>x!==u);
-  const approved = s.approvals || [];
-  const left = needed.filter(x=>!approved.includes(x));
-  el.innerHTML = `
-    <span class="pill" style="background:#fff7ed;color:#9a3412;">휴무 요청중 ⏳</span>
-    <div class="small" style="margin-top:8px;">승인 필요: <b>${left.join(", ")}</b></div>
-  `;
-}
-
+/** ✅ 오늘 현황: 본인만 */
 function renderTodayScreen(){
   const data = load();
   const k = todayKey();
   const el = document.getElementById("today");
   if(!el) return;
 
+  const u = getActiveUser();
+  const row = data[k]?.[u];
+  const ok = hasAnyRecord(row);
+
+  let statusHTML = "";
+  if(isWeekendKey(k)){
+    statusHTML = `<span class="ok">😴 주말 휴무</span>`;
+  }else if(ok){
+    statusHTML = `<span class="ok">⭕ 기록 있음</span>`;
+  }else{
+    statusHTML = `<span class="no">❌ 기록 없음</span>`;
+  }
+
   el.innerHTML = `
     <div class="card">
       <h3 style="margin:0 0 6px;">오늘 현황</h3>
       <div class="small">${displayKeyWithWeekday(k)} </div>
     </div>
+    <div class="card"><b>${u}</b><br>${statusHTML}</div>
   `;
-
-  const restAll = data[k]?.__rest || {};
-  const pending = Object.values(restAll).filter(x=>x && x.status==="pending");
-  if(pending.length>0){
-    const me = getActiveUser();
-    el.innerHTML += `
-      <div class="card">
-        <b>휴무 요청</b>
-        <div class="small" style="margin-top:6px;">요청자가 “오늘은 나 쉴게!”를 눌렀어요. 나머지 두 사람이 모두 승인하면 오늘 벌금이 스킵됩니다.</div>
-        ${pending.map(req=>{
-          const requester = req.requester;
-          const approvals = req.approvals || [];
-          const needed = USERS.filter(x=>x!==requester);
-          const left = needed.filter(x=>!approvals.includes(x));
-          const canApprove = me && me !== requester && !approvals.includes(me);
-          return `
-            <div class="listItem">
-              <div><b>${requester}</b> — 휴무 요청중</div>
-              <div class="small" style="margin-top:6px;">승인 현황: ${approvals.length}/2 (남은 승인: <b>${left.join(", ")}</b>)</div>
-              <div class="row" style="margin-top:10px;">
-                <button class="${canApprove?'primary':'ghost'}" onclick="${canApprove?`approveRest('${requester}')`:'void(0)'}" ${canApprove?'':'disabled'}>
-                  ${canApprove?'승인하기':'승인 불가'}
-                </button>
-              </div>
-            </div>
-          `;
-        }).join("")}
-      </div>
-    `;
-  }
-
-  USERS.forEach(u=>{
-    const row = data[k]?.[u];
-    const ok = hasAnyRecord(row);
-    const restOk = isRestApproved(data, k, u);
-
-    let statusHTML = "";
-    if(isWeekendKey(k)){
-      statusHTML = `<span class="ok">😴 주말 휴무</span>`;
-    }else if(restOk){
-      statusHTML = `<span class="ok">😴 휴무 승인(벌금 스킵)</span>`;
-    }else if(ok){
-      statusHTML = `<span class="ok">⭕ 기록 있음</span>`;
-    }else{
-      statusHTML = `<span class="no">❌ 기록 없음</span>`;
-    }
-
-    el.innerHTML += `<div class="card"><b>${u}</b><br>${statusHTML}</div>`;
-  });
 }
 
+/** ✅ 4주 벌금: 본인만 */
 function renderFine4w(){
   const baseKey = todayKey();
   const body = document.getElementById("fine4wBody");
@@ -756,42 +641,32 @@ function renderFine4w(){
   body.innerHTML = "";
 
   const data = load();
+  const u = getActiveUser();
 
-  let totalAll = 0;
-  const perUser = {};
+  let sum = 0;
+  let absenceSum = 0;
 
-  USERS.forEach(u=>{
-    let sum = 0;
-    let absenceSum = 0;
+  for(let i=0;i<28;i++){
+    const dk = dateKeyPlusDays(baseKey, -i);
 
-    for(let i=0;i<28;i++){
-      const dk = dateKeyPlusDays(baseKey, -i);
-
-      const row = data[dk]?.[u];
-      if(row?.absenceFineApplied){
-        absenceSum += (row.absenceFine || ABSENCE_FINE);
-      }
-
-      sum += calcFineForDateWithData(data, dk, u);
+    const row = data[dk]?.[u];
+    if(row?.absenceFineApplied){
+      absenceSum += (row.absenceFine || ABSENCE_FINE);
     }
 
-    perUser[u] = { sum, absenceSum };
-    totalAll += sum;
-  });
+    sum += calcFineForDateWithData(data, dk, u);
+  }
 
-  USERS.forEach(u=>{
-    const obj = perUser[u];
-    body.innerHTML += `
-      <div class="card">
-        <b>${u}</b><br>
-        총 벌금: <b>${obj.sum.toLocaleString()}원</b>
-        ${obj.absenceSum>0 ? `<div class="small" style="margin-top:6px;">결석 벌금: <b>${obj.absenceSum.toLocaleString()}원</b></div>` : ``}
-      </div>
-    `;
-  });
-  body.innerHTML += `<div class="card"><b>전체 합계</b><br><b>${totalAll.toLocaleString()}원</b></div>`;
+  body.innerHTML += `
+    <div class="card">
+      <b>${u}</b><br>
+      총 벌금: <b>${sum.toLocaleString()}원</b>
+      ${absenceSum>0 ? `<div class="small" style="margin-top:6px;">결석 벌금: <b>${absenceSum.toLocaleString()}원</b></div>` : ``}
+    </div>
+  `;
 }
 
+/** ✅ 누적시간: 본인만 */
 function formatMinutes(mins){
   const h = Math.floor(mins/60);
   const m = mins % 60;
@@ -805,27 +680,22 @@ function renderAcc(){
   if(!el) return;
   el.innerHTML = "";
 
-  USERS.forEach(u=>{
-    const mins = acc[u] || 0;
-    el.innerHTML += `
-      <div class="card">
-        <b>${u}</b><br>
-        말하기훈련 누적시간: <b>${formatMinutes(mins)}</b>
-      </div>
-    `;
-  });
+  const u = getActiveUser();
+  const mins = acc[u] || 0;
+
+  el.innerHTML = `
+    <div class="card">
+      <b>${u}</b><br>
+      말하기훈련 누적시간: <b>${formatMinutes(mins)}</b>
+    </div>
+  `;
 }
 
+/** ✅ 전체 데이터 초기화 버튼: 모든 사용자에게 표시 */
 function renderAdminControls(){
-  const u = getActiveUser();
   const adminBox = document.getElementById("adminControls");
   if(!adminBox) return;
-
-  if(u === ADMIN){
-    adminBox.classList.remove("hidden");
-  }else{
-    adminBox.classList.add("hidden");
-  }
+  adminBox.classList.remove("hidden");
 }
 
 function renderAll(){
@@ -836,7 +706,6 @@ function renderAll(){
     renderPatternTodayList();
     renderSpeakingToday();
     renderTodayFine();
-    renderRestMyStatus();
 
     renderTodayScreen();
     renderFine4w();
@@ -844,11 +713,8 @@ function renderAll(){
   }
 }
 
+/** ✅ 초기화: 비번 그대로 유지(모든 사용자 접근 가능) */
 function resetAll(){
-  const u = getActiveUser();
-  if(u !== ADMIN){
-    return showModal("권한 없음", "이 작업은 관리자만 할 수 있어요.");
-  }
   const txt = prompt("전체 데이터를 초기화하려면 비밀번호를 입력하세요");
   if(txt !== "20262026") return alert("비밀번호가 틀렸어요.");
 
@@ -982,9 +848,8 @@ function boot(){
     const bd = document.getElementById("basisDate");
     if(bd) bd.textContent = displayKeyWithWeekday(nowKey);
 
-    // ✅ 지금시간/카운트다운은 1초 단위처럼 보이도록 여기서도 refresh
-    renderTodayFine();
-  }, 1000); // ✅ 1초마다 갱신(시계+카운트다운용)
+    renderAll();
+  }, 30 * 1000);
 }
 document.addEventListener("DOMContentLoaded", boot);
 </script>
@@ -1060,13 +925,9 @@ document.addEventListener("DOMContentLoaded", boot);
     <div id="record" class="screen">
       <div class="card">
         <h3 style="margin:0 0 10px;">오늘 공부 기록</h3>
-        <div class="small">기준일: <span id="basisDate"></span></div>
+        <div class="small">기준일: <span id="basisDate"></span> </div>
 
-        <!-- ✅ 실시간 시계 & 카운트다운 -->
         <div class="note small" style="margin-top:10px;">
-          <div><b>현재 시각:</b> <span id="nowTime"></span></div>
-          <div style="margin-top:6px;"><b>마감까지 남은 시간:</b> <span id="deadlineLeft"></span></div>
-          <hr class="sep">
           *오늘 마감시간까지(새벽2시) 아무 기록이 없으면 "결석"으로 간주하고 벌금 20,000원 확정/*토일은 학습 휴무(벌금 없음)
         </div>
 
@@ -1173,15 +1034,6 @@ document.addEventListener("DOMContentLoaded", boot);
             <div><span class="pill">자동 계산</span></div>
           </div>
           <div id="todayFineDetail" class="small" style="margin-top:10px;"></div>
-        </div>
-
-        <div class="card" style="margin-top:12px;">
-          <div class="small"><b>특별 기능</b> — 오늘 쉬고 싶다면?</div>
-          <div class="small" style="margin-top:6px;">“오늘은 나 쉴게!”를 누르면, 나머지 두 사람이 모두 승인해야 오늘 벌금이 스킵돼요.</div>
-          <div class="row" style="margin-top:10px;">
-            <button class="ghost" onclick="requestRest()">오늘은 나 쉴게!</button>
-          </div>
-          <div id="restMyStatus" class="small" style="margin-top:10px;"></div>
         </div>
 
       </div>
