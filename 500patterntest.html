@@ -128,6 +128,43 @@ button.active{
   font-size:20px;
   border-radius:18px;
 }
+/* ===== 맞음 / 틀림 버튼 세로 크게 ===== */
+.correct,
+.wrong{
+  flex:1;
+  min-height:96px;      /* 세로 길이 크게 */
+  font-size:20px;
+  border-radius:20px;
+}
+/* ===== 버튼 물방울 리플 효과 ===== */
+.ripple-btn{
+  position:relative;
+  overflow:hidden;
+}
+
+.ripple-btn::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:0;
+  height:0;
+  background:rgba(255,255,255,0.4);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  opacity:0;
+}
+
+.ripple-btn:active::after{
+  width:220%;
+  height:220%;
+  opacity:1;
+  transition:
+    width 0.4s ease-out,
+    height 0.4s ease-out,
+    opacity 0.6s;
+}
+
 </style>
 </head>
 
