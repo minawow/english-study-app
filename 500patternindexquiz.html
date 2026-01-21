@@ -1,0 +1,1642 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>500 Pattern Test (Korean Pattern Quiz)</title>
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --card:#12141a;
+      --card2:#0f1116;
+      --text:#f4f6ff;
+      --muted:#aab1c3;
+      --line:rgba(255,255,255,.08);
+
+      --accent:#ffd6e7;     /* 시작 버튼 연한 분홍 */
+      --accentText:#251018;
+
+      --sel:#5af0c8;        /* 선택 강조 */
+      --selText:#062018;
+
+      --btn:#1a1d26;
+      --btn2:#202433;
+
+      --danger:#ff3b30;     /* iOS red */
+      --ok:#34c759;         /* iOS green */
+      --warn:#ff9f0a;       /* iOS orange */
+
+      --radius:18px;
+      --radius2:14px;
+
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --shadow2: 0 6px 14px rgba(0,0,0,.35);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text", system-ui, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, #12162a 0%, var(--bg) 55%, #06070a 100%);
+      color:var(--text);
+      min-height:100vh;
+      padding: 14px 12px 18px;
+    }
+    .app{
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 12px;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .title h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+    .title .sub{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .pill{
+      padding: 8px 10px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 12px;
+      align-items:start;
+    }
+
+    @media (max-width: 860px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding: 12px 12px 10px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .card .hd h2{
+      margin:0;
+      font-size: 14px;
+      color: #eaf0ff;
+      letter-spacing:.2px;
+    }
+    .card .bd{
+      padding: 12px;
+    }
+
+    /* Buttons */
+    .btn{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      color: var(--text);
+      padding: 11px 12px;
+      border-radius: 14px;
+      font-size: 14px;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .08s ease, filter .15s ease, background .15s ease, border-color .15s ease;
+      position:relative;
+      overflow:hidden;
+      box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 10px 24px rgba(0,0,0,.25);
+    }
+    .btn:active{
+      transform: translateY(1px) scale(.99);
+      filter: brightness(.98);
+    }
+    .btn[disabled]{
+      opacity:.45;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    /* Subtle “premium” press glow (not cheesy ripple) */
+    .btn::after{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: radial-gradient(circle at var(--px, 50%) var(--py, 40%), rgba(255,255,255,.24) 0%, rgba(255,255,255,0) 55%);
+      opacity:0;
+      transition: opacity .18s ease;
+      pointer-events:none;
+    }
+    .btn.pressed::after{ opacity:1; }
+
+    .btn-primary{
+      background: linear-gradient(180deg, rgba(255,214,231,.95), rgba(255,214,231,.68));
+      border-color: rgba(255,214,231,.55);
+      color: var(--accentText);
+      box-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 14px 30px rgba(255,214,231,.10);
+      font-weight: 700;
+    }
+
+    .btn-ok{
+      background: linear-gradient(180deg, rgba(52,199,89,.95), rgba(52,199,89,.65));
+      border-color: rgba(52,199,89,.55);
+      color: #07160b;
+      font-weight: 800;
+    }
+    .btn-wrong{
+      background: linear-gradient(180deg, rgba(255,59,48,.95), rgba(255,59,48,.65));
+      border-color: rgba(255,59,48,.55);
+      color: #200506;
+      font-weight: 800;
+    }
+    .btn-danger{
+      background: linear-gradient(180deg, rgba(255,59,48,.92), rgba(255,59,48,.60));
+      border-color: rgba(255,59,48,.55);
+      color: white;
+      font-weight: 900;
+    }
+    .btn-ghost{
+      background: rgba(255,255,255,.03);
+      border-color: var(--line);
+      color: var(--text);
+      box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 10px 24px rgba(0,0,0,.22);
+    }
+    .btn-small{
+      padding: 9px 10px;
+      border-radius: 13px;
+      font-size: 13px;
+    }
+    .btn-tall{
+      padding-top: 18px;
+      padding-bottom: 18px;
+      border-radius: 16px;
+      min-height: 62px;
+      font-size: 16px;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .row.tight{ gap:8px; }
+    .row.split{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .row.split > *{ flex:1; min-width: 160px; }
+
+    /* Day buttons grid */
+    .dayGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+      gap: 8px;
+    }
+    .chip{
+      padding: 10px 10px;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      font-size: 13px;
+      cursor:pointer;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+      user-select:none;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      box-shadow: 0 1px 0 rgba(255,255,255,.06) inset;
+    }
+    .chip:active{ transform: translateY(1px) scale(.99); }
+    .chip.selected{
+      background: linear-gradient(180deg, rgba(90,240,200,.96), rgba(90,240,200,.62));
+      border-color: rgba(90,240,200,.62);
+      color: var(--selText);
+      font-weight: 800;
+      box-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 12px 24px rgba(90,240,200,.08);
+    }
+    .chip .mini{
+      display:block;
+      font-size: 11px;
+      opacity:.75;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    /* Count chips */
+    .countGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    /* Inputs */
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input, textarea, select{
+      width: 100%;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.25);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 12px;
+      font-size: 15px;
+      outline:none;
+      transition: border-color .15s ease, background .15s ease;
+    }
+    textarea{ min-height: 56px; resize: vertical; }
+    input:focus, textarea:focus{
+      border-color: rgba(255,214,231,.55);
+      background: rgba(0,0,0,.28);
+    }
+    .hint{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      margin-top: 8px;
+    }
+
+    /* Screens */
+    .screen{ display:none; }
+    .screen.active{ display:block; }
+
+    /* Quiz */
+    .qTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom: 10px;
+    }
+    .progress{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .question{
+      font-size: 22px;
+      line-height: 1.25;
+      padding: 14px 14px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      box-shadow: var(--shadow2);
+      margin: 10px 0 12px;
+      word-break: keep-all;
+    }
+
+    .answerBox{
+      display:none;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: var(--radius);
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+    }
+    .answerBox.show{ display:block; }
+
+    .aTitle{
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing:.2px;
+      color: #f2f5ff;
+      margin-bottom: 8px;
+    }
+    .exList{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .exItem{
+      padding: 10px 10px;
+      border-radius: 14px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.22);
+    }
+    .exKo{
+      font-size: 14px;
+      color: #f6f7ff;
+      font-weight: 700;
+      margin-bottom: 5px;
+      word-break: keep-all;
+    }
+    .exEn{
+      font-size: 13px;
+      color: var(--muted);
+      word-break: break-word;
+    }
+    .exActions{
+      display:flex;
+      justify-content:flex-end;
+      margin-top: 8px;
+    }
+
+    .twoBtns{
+      display:flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .twoBtns > button{
+      flex:1;
+    }
+
+    /* Add example area in quiz */
+    .addExample{
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(255,255,255,.12);
+    }
+    .addExample .row{ margin-top: 8px; }
+    .addExample textarea{ min-height: 60px; }
+
+    /* Results */
+    .resultSummary{
+      padding: 12px;
+      border-radius: var(--radius);
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      margin-bottom: 12px;
+    }
+    .resultSummary .big{
+      font-size: 16px;
+      font-weight: 900;
+      margin-bottom: 6px;
+    }
+    .resultSummary .small{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .wrongCard{
+      padding: 12px;
+      border-radius: var(--radius);
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      margin-bottom: 10px;
+    }
+    .wrongCard .wk{
+      font-weight: 900;
+      font-size: 15px;
+      margin-bottom: 8px;
+      word-break: keep-all;
+    }
+    .wrongCard .dayTag{
+      display:inline-block;
+      margin-left: 8px;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      color: var(--muted);
+      background: rgba(0,0,0,.18);
+      vertical-align: middle;
+    }
+
+    .statusLine{
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 16px;
+    }
+
+    /* spacing fix (요청: 간격 좁은 곳 벌리기) */
+    .sp8{ height:8px; }
+    .sp10{ height:10px; }
+    .sp12{ height:12px; }
+    .sp14{ height:14px; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title">
+      <h1>패턴 말하기 퀴즈 (한글 → 예문 확인)</h1>
+      <div class="sub">DAY 1~20 + DAY21~(내가 추가한 패턴/예문) · 저장: 기기(localStorage)</div>
+    </div>
+    <div class="pill" id="todayPill"></div>
+  </header>
+
+  <!-- HOME -->
+  <section id="screenHome" class="screen active">
+    <div class="grid">
+      <div class="card">
+        <div class="hd">
+          <h2>DAY 선택 (복수 선택)</h2>
+          <button class="btn btn-small btn-ghost" id="btnSelectAll">전체 선택</button>
+        </div>
+        <div class="bd">
+          <div class="dayGrid" id="dayGrid"></div>
+
+          <div class="sp12"></div>
+
+          <h2 style="margin:0 0 6px; font-size:14px; color:#eaf0ff;">퀴즈 개수 선택</h2>
+          <div class="countGrid" id="countGrid"></div>
+
+          <div class="sp12"></div>
+
+          <button class="btn btn-primary btn-tall" id="btnStart">퀴즈 시작</button>
+          <div class="statusLine" id="homeStatus"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd">
+          <h2>새 패턴 추가 (DAY21부터)</h2>
+          <button class="btn btn-small btn-ghost" id="btnGoManage">데이터 관리</button>
+        </div>
+        <div class="bd">
+          <label>DAY 번호 (21부터) — 비워두면 자동 배정(25개 차면 다음 DAY로)</label>
+          <input id="inpNewDay" type="number" min="21" placeholder="예: 21 (비워두면 자동)" />
+
+          <div class="sp10"></div>
+
+          <label>패턴 한글 의미</label>
+          <textarea id="inpNewPattern" placeholder="예: ~인 것 같아"></textarea>
+
+          <div class="sp10"></div>
+
+          <button class="btn btn-small btn-ghost" id="btnAddPattern">패턴 추가</button>
+          <div class="hint">
+            · 새 패턴은 DAY21부터 저장돼요. <br/>
+            · DAY21에 25개가 차 있으면 자동으로 DAY22로 넘어가요.
+          </div>
+          <div class="statusLine" id="addPatternStatus"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="screenQuiz" class="screen">
+    <div class="card">
+      <div class="hd">
+        <h2>퀴즈</h2>
+        <div class="row tight">
+          <button class="btn btn-small btn-ghost" id="btnBackHome">처음으로</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="qTop">
+          <div class="progress" id="progressText"></div>
+          <div class="progress" id="dayInfo"></div>
+        </div>
+
+        <div class="question" id="questionText"></div>
+
+        <div class="row">
+          <!-- 요청: 정답확인 버튼 위치는 맞음/틀림 위 -->
+          <button class="btn btn-ghost btn-tall" id="btnShowAnswer">정답 확인</button>
+        </div>
+
+        <div class="answerBox" id="answerBox">
+          <div class="aTitle">정답(예문) — 한글 → 영어</div>
+          <div class="exList" id="exampleList"></div>
+
+          <div class="addExample" id="addExampleArea">
+            <div class="aTitle">예문 추가 (한글/영어) · 개별 삭제 가능</div>
+            <label>예문(한글)</label>
+            <textarea id="inpExKo" placeholder="예: 전에 저 사람을 본 것 같은데."></textarea>
+            <div class="sp10"></div>
+            <label>예문(영어)</label>
+            <textarea id="inpExEn" placeholder="예: I think I saw him before."></textarea>
+
+            <div class="sp10"></div>
+            <div class="row split">
+              <button class="btn btn-small btn-ghost" id="btnAddExample">예문 추가</button>
+              <!-- 요청: 모든 예문 삭제 버튼(빨간색/진한 흰글씨) -->
+              <button class="btn btn-danger btn-small" id="btnDeleteAllExamples">모든 예문 삭제</button>
+            </div>
+            <div class="statusLine" id="exStatus"></div>
+          </div>
+        </div>
+
+        <!-- 요청: 맞음/틀림 좌우 -->
+        <div class="twoBtns">
+          <button class="btn btn-ok btn-tall" id="btnCorrect">맞음</button>
+          <button class="btn btn-wrong btn-tall" id="btnWrong">틀림</button>
+        </div>
+
+        <div class="statusLine" id="quizStatus"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="screenResult" class="screen">
+    <div class="card">
+      <div class="hd">
+        <h2>결과</h2>
+        <div class="row tight">
+          <button class="btn btn-small btn-ghost" id="btnRestart">다시 시작</button>
+          <button class="btn btn-small btn-primary" id="btnCopyWrong">오늘 틀린 패턴 복사</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="resultSummary">
+          <div class="big" id="resultBig"></div>
+          <div class="small" id="resultSmall"></div>
+          <div class="statusLine" id="copyStatus"></div>
+        </div>
+
+        <div id="wrongListWrap"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MANAGE (optional) -->
+  <section id="screenManage" class="screen">
+    <div class="card">
+      <div class="hd">
+        <h2>데이터 관리</h2>
+        <div class="row tight">
+          <button class="btn btn-small btn-ghost" id="btnManageBack">처음으로</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="hint">
+          여기서는 전체 데이터 확인만 가능(삭제/수정은 퀴즈에서 해당 패턴 들어가서 예문 관리).
+        </div>
+        <div class="sp10"></div>
+        <div id="manageDump" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px; color:#cbd3e5; white-space:pre-wrap;"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* =========================
+   Utilities
+========================= */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+function todayKey(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function uid(prefix="id"){
+  return prefix + "_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16);
+}
+function safeTrim(s){ return (s ?? "").toString().trim(); }
+
+/* Premium press glow on any button */
+function attachPressGlow(el){
+  el.addEventListener("pointerdown", (e)=>{
+    const r = el.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * 100;
+    const py = ((e.clientY - r.top) / r.height) * 100;
+    el.style.setProperty("--px", px.toFixed(1)+"%");
+    el.style.setProperty("--py", py.toFixed(1)+"%");
+    el.classList.add("pressed");
+  });
+  const off = ()=> el.classList.remove("pressed");
+  el.addEventListener("pointerup", off);
+  el.addEventListener("pointercancel", off);
+  el.addEventListener("pointerleave", off);
+}
+
+/* Clipboard copy (no alert/popup) */
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  }catch(e){
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position="fixed";
+    ta.style.left="-9999px";
+    ta.style.top="0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    }catch(err){
+      document.body.removeChild(ta);
+      return false;
+    }
+  }
+}
+
+/* =========================
+   Storage Keys
+========================= */
+const STORE_KEY = "patternQuizApp.v7.days";
+const STORE_UI  = "patternQuizApp.v7.ui";
+
+/* =========================
+   Base Data (DAY1~DAY20 patterns)
+   - DAY1 has official 4 examples each (KO+EN)
+   - DAY2~DAY20 patterns only (examples can be added by user)
+========================= */
+
+/* DAY1: 25 patterns + 100 EN + 100 KO (aligned) */
+const day1Patterns = [
+  "~인 것 같아","~는 아닌 것 같아","~를 생각중이야","~를 생각하고 있었어","~를 계속 생각해왔어",
+  "~라고 생각해?","~인 것 같지 않아?","~에 대해 어떻게 생각해?","~에 대해 어떻게 생각해?","~는 어때?",
+  "~를 알아","전부터 ~를 알고 있었어","~인지 아닌지 모르겠어","뭘~할지 모르겠어","~에 대해서는 전혀 몰라",
+  "~를 아니?","~가 뭔지 아니?","왜~하는지 아니?","언제~하는지 아니?","~인지 아닌지 아니?",
+  "~가 있어","~가 별로 없어","~가 있었어","~가 있을 거야","분명~가 있을 거야"
+];
+
+const day1En = [
+  "I think I saw him before.","I think the movie's almost over.","I think it's going to rain soon.","I think we should get going.",
+  "I don't think he's very kind.","I don't think we can wait that long.","I don't think I can attend the meeting.","I don't think that's necessary.",
+  "I'm thinking about buying a laptop.","I'm thinking about going out tonight.","I'm thinking about getting plastic surgery.","I'm thinking about what you said.",
+  "I was thinking about calling you.","I was thinking about you","I was thinking about going to the mall.","I was thinking about getting a motorcycle.",
+  "I've been thinking about starting a business.","I've been thinking about getting a divorce.","I've been thinking about selling the old car.","I've been thinking about quitting my job.",
+  "Do you think she's pretty?","Do you think he's lying?","Do you think we'll win?","Do you think there's enough time?",
+  "Don't you think it's too cold today?","Don't you think that's amazing?","Don't you think it's a little too soon?","Don't you think she's too young for him?",
+  "What do you think of my new shoes?","What do you think of Gina's boyfriend?","What do you think of our instructor?","What do you think of gay marriage?",
+  "What do you think about this painting?","What do you think about her?","What do you think about her new hairstyle?","What do you think about leaving early?",
+  "How do you like the music?","How do you like it?","How do you like the wine?","How do you like your eggs?",
+  "I know what you did.","I know this area very well.","I know how to make Tom laugh.","I know how you feel.",
+  "I've known her for 10 years.","I've known Phil for a long time.","I've known him since he was a kid.","I've known about this for a week.",
+  "I don't know if I can do this.","I don't know if she told you.","I don't know if we can come.","I don't know if he'll like it.",
+  "I don't know what to choose.","I don't know where to start?","I don't know how to solve this problem.","I don't know which way to go.",
+  "I don't know anything about you.","I don't know anything about it.","I don't know anything about Carla's love life.","I don't know anything about politics.",
+  "Do you know my cell phone number?","Do you know each other?","Do you know he's engaged?","Do you know anything about him?",
+  "Do you know what happened?","Do you know what his name is?","Do you know what this means?","Do you know what Lydia said?",
+  "Do you know why it's cold in here?","Do you know why she didn't come?","Do you know why he's angry?","Do you know why she left the company?",
+  "Do you know when his birthday is?","Do you know when he arrived?","Do you know when this will be over?","Do you know when the fireworks start?",
+  "Do you know if Jim has any allergies?","Do you know if we're getting raises?","Do you know if Jane's coming?","Do you know if the show starts at 7:00?",
+  "There's a possibility.","There's a problem.","There's a traffic jam.","There's a strong wind.",
+  "There are only a few tickets left.","There are a few cars parked.","There are so many things to do today.","There are too many problems with this.",
+  "There has been an accident.","There has been some change.","There has been little time to prepare.","There has been a misunderstanding.",
+  "There will be a test this Friday.","There will be many people at the party.","There will be many prizes at the event.","There will be no next time.",
+  "There must be a better way.","There must be more beer.","There must be a lot of people there.","There must be someone in charge."
+];
+
+const day1Ko = [
+  "전에 저 사람을 본 것 같은데.","영화가 거의 다 끝난 것 같아.","금방 비가 올 것 같아.","우린 가봐야 할 것 같은데.",
+  "그 사람 썩 친절하지는 않은 것 같아.","우린 그렇게 오래 못 기다릴 것 같은데.","나 그 회의에 참석 못할 것 같아.","그건 필요 없을 것 같아.",
+  "노트북을 하나 살까 생각 중이야.","오늘 밤에 외출할까 생각 중이야.","성형수술을 할까 생각 중이야.","네가 한 말에 대해 생각하고 있어.",
+  "너한테 전화할까 생 중이었는데.","네 생각 하고 있었어.","쇼핑몰에 갈까 생각하던 중이었어.","오토바이를 장만해볼까 생각하고 있었어.",
+  "사업을 해볼까 하고 계속 생각해왔어.","이혼에 대해 계속 생각해왔어.","낡은 차를 팔아버릴까 계속 생각하고 있었어.","회사를 그만둘까 계속 생각해왔어.",
+  "그 여자가 예쁜 것 같아?","그 애가 거짓말하고 있다고 생각해?","우리가 이길 것 같니?","시간이 충분하다고 생각해?",
+  "오늘 너무 추운 것 같지 않아?","그거 대단한 것 같지 않니?","좀 너무 빠른 것 같지 않아?","그 여자는 그에게 너무 어린 것 같지 않니?",
+  "내가 새로 산 신발 어때?","지나의 남자친구는 어떤 것 같니?","우리 선생님에 대해 어떻게 생각해?","동성 결혼에 대해 어떻게 생각하니?",
+  "이 그림 어떤 것 같니?","그 여자에 대해 어떻게 생각해?","그여자 새로 한 머리 스타일 어때?","일찍 떠나는 것에 대해서 어떻게 생각하니?",
+  "그 음악 어때? (마음에 드니?)","그거 마음에 드니?","그 와인은 어떤 것 같아? (괜찮아?)","계란을 어떻게 요리해줄까?",
+  "네가 무슨 짓을 했는지 다 알아.","내가 이 지역은 꽉 잡고 있지.","어떻게 해야 톰을 웃길 수 있는지 알아.","네 기분이 어떤지 알아.",
+  "난 10년 전부터 그 여자를 알고 있었어.","나는 오랫동안 필을 알고 지냈어.","난 그 사람을 어렸을 때부터 알아왔어.","난 일주일 전부터 이것을 알고 있었어.",
+  "내가 이걸 할 수 있을지 모르겠어.","그 애가 너에게 이야기했는지 모르겠구나.","우리가 갈 수 있을지 모르겠어.","그 사람이 그걸 좋아할지 모르겠다.",
+  "뭘 골라야 할지 모르겠어.","어디에서 시작해야 할지 모르겠어.","이 문제를 어떻게 푸는지 모르겠어.","어느 길로 가야 할지 모르겠어.",
+  "난 너에 대해 아는 게 하나도 없어.","그것에 대해서는 전혀 몰라 .","칼라의 연애생활에 대해서는 아무것도 몰라","정치에 대해서는 전혀 몰라요.",
+  "내 휴대폰 번호 알아?","서로 아는 사이야?","그 남자 약혼한 거 알고 있어?","그 사람에 대해 아는 게 좀 있니?",
+  "무슨 일이 일어났는지 아니?","그 애 이름이 뭔지 알아?","이게 무슨 뜻인지 알아?","리디아가 뭐라고 했는지 알아?",
+  "왜 여기가 추운지 알아?","그 애가 왜 안왔는지 아니?","그 남자애개 화가 난 이유를 알고 있어?","그 애가 왜 회사를 그만뒀는지 알아?",
+  "그 애 생일이 언제인지 알아?","그분이 언제 도착했는지 알아요?","이게 언제 끝날지 알아요?","언제 불꽃놀이가 시작되는지 알아?",
+  "혹시 짐이 알레르기가 있니?","우리 월급이 인상될지 알고 있니?","제인이 올지 안 올지 아니?","혹시 그 프로가 7시에 시작하니?",
+  "가능성이 있어.","문제가 생겼어.","차가 막혀.","바람이 세게 불어.",
+  "남은 표가 별로 없어.","자동차 몇 대가 주차되어 있어.","오늘 할 일이 무척 많거든.","이건 문제가 너무 많아.",
+  "사고가 났어.","바뀐 게 좀 있어.","준비할 시간이 별로 없었어.","오해가 있었어요.",
+  "이번 주 금요일에 시험이 있을 거예요.","파티에 사람들이 많이 올 거야.","행사에 경품이 많을 거야.","이번만 봐주는 거야.",
+  "분명 더 나은 방법이 있을 거야.","맥주가 분명히 더 있을 텐데.","거기에 사람들이 분명 많이 올거야.","담당자가 분명히 있을 거야."
+];
+
+function buildDay1WithOfficialExamples(){
+  const patterns = [];
+  for(let i=0;i<day1Patterns.length;i++){
+    const pid = `D1P${i+1}`;
+    const examples = [];
+    const baseIndex = i*4;
+    for(let k=0;k<4;k++){
+      const en = day1En[baseIndex+k] ?? "";
+      const ko = day1Ko[baseIndex+k] ?? "";
+      examples.push({ id: uid("ex"), en, ko, source:"official" });
+    }
+    patterns.push({ id: pid, ko: day1Patterns[i], examples });
+  }
+  return { day: 1, patterns };
+}
+
+/* DAY2~DAY4 patterns (from user’s index text) */
+const day2Patterns = [
+  "~가 없어","~한건 아무것도 없어","~하는 사람은 아무도 없어","~할 시간이 없어","~할 필요 없어",
+  "~가 있어?","~가 좀 있어?","~한 게 있나요?","~하는 사람 있어?","~가 많나요?",
+  "~할 방법이 없을까요?","~하는 건 불가능해","내가 ~하는 건 불가능해","더 ~하는 방법이 있어","~하려면 어떤 방법이 좋을까요?",
+  "~하고 싶어","난 단지 ~하고 싶었어","~하고 싶지 않아","~하고 싶어요","난 정말 ~하고 싶어요",
+  "~할래?","~하지 않을래?","뭘~하고 싶어?","왜~하고 싶어?","언제~하고 싶어?"
+];
+const day3Patterns = [
+  "~는 어때?","~는 어때?","~하자","~하지 말자","~하는 게 좋겠어",
+  "~하지 그래?","우리 ~하는 게 어때요?","우리 ~해야 할지도 모르겠어","우리 ~하자","제가~를 제안해도 될까요?",
+  "난 좀 ~해","난 정말 ~해","난 완전히~해","그건 좀 ~해","이건 완전히 ~야",
+  "~에 만족해","~해서 정말 기뻐","~해서 기쁘다","기꺼이 ~할게","~할 용의가 있어",
+  "~해서 놀랐어","~를 믿을 수가 없어","넌 ~를 못 믿을 거야","~하다니 충격적이었어","~하는 건 당연해"
+];
+const day4Patterns = [
+  "난 ~가 무서워","난~가 걱정돼","~ 때문에 긴장돼","~하다니 실망이야","~해서 참 답답해",
+  "~를 좋아하니?","나 ~를 좋아해","난~에 빠졌어","난 ~를 좋아하지 않아","난~하는 방식이 맘에 안들어",
+  "~할 때가 좋아","~하면 정말 싫어","~에관심있어요?","~에 관심없어요","~는 신경안써",
+  "네 ~가 멋진데","네가 ~하는 방식이 좋아","넌 참~하구나","넌~를 잘하는구나","넌 감각이 뛰어나구나",
+  "~해서 고마워","~에 감사드려요","~해주신다면정말감사하겠어요","~해주시니 정말","~하다니 정말 고마워"
+];
+
+/* DAY5~DAY20 patterns (you just provided) */
+const day5Patterns = [
+  "~하려고 해","~하지 않을거야","~할거니?","~안 할거니?","내가 ~할게",
+  "~할 준비가 됐어?","~할 준비가 됐어","~하려던 참이었어","~하려던 참이었어","~할 계획이야",
+  "~해야해","~해야해","~해야해","~해야겠어","~하는게 좋겠어",
+  "~해야 하니?","왜 ~해야 돼?","나 ~해야 해?","왜 내가 ~해야 돼?","난 ~할 필요가 없어",
+  "어디에서 ~하니?","어디서~했어?","어디서~할 수 있나요?","가장 가까운 ~가 어디죠?","~하기에 가장 좋은곳이 어디죠?"
+];
+
+const day6Patterns = [
+  "누가~니?","네~가 누구야?","누가 ~할거니?","~할 사람?","그거 누구의 ~야?",
+  "너의 ~는 뭐야?","뭘~할거야?","~는 어때?","어떤 종류의 ~를 ...해?","~가 어떻게 된 거야?",
+  "언제~했니?","언제~할 거니?","언제~할 거니?","언제~하는게 가장 좋아?","마지막으로~한게 언제였지?",
+  "내가 ~할게","~를 알려줘","~에대해 생각해볼게","~인지 볼게","~를 확인해볼게",
+  "그래서~인거야","~하니까 그렇지","그게 바로 ~야","~한건 그게 아니야","그렇게 ~하는 거야"
+];
+
+const day7Patterns = [
+  "거기서 ~한거야","그때 ~한거야","~한 게 그거야?","그것 때문에~인가요?","~밖에 없어?",
+  "난 ~만 있으면 돼","내가 아는 건~뿐이야","넌 ~만 하면돼","내가 ...할수 있는 건 ~밖에 없어","내가 ~한 건 그게 다야",
+  "~해서 미안해","~해서 미안해","~해서 미안해","만약 ~했다면 정말 미안해","~에대해 사과드려요",
+  "~하려던 거였어","...하려던 건 아니었어","..하려던 건 절대 아니었어","그렇다고 ..인건 아니야","내 말은 ..라는 거야",
+  "...하려고했어","..할 수밖에 없었어","..할 수밖에 없었어","..에 대해선 변명의 여기가 없어","내가 왜 ..했는지 모르겠어"
+];
+
+const day8Patterns = [
+  "..가 안됐어요","..하다니 아깝다","..하다니 너무 안됐어","..하다니 안타깝네요","유감스럽지만..입니다",
+  "분명히...야","..인지 잘 모르겠어","...라고 확신해","...가 미심쩍어","...가 의심스러워",
+  "..가 확실해?","..라는 게 사실이야?","...라는 말이니?","...라는 말이야?","설마 ...는 아니겠지",
+  "왜...인지궁금해","...가 뭔지 궁금해","..인지궁금해","...가 궁금해","혹시..할까해서요",
+  "왜 그렇게...해?","왜...하고있니?","왜...했어?","어째서..인거야?","왜...하니?"
+];
+
+const day9Patterns = [
+  "...해도 될까요?","..해도 될까요?","...해도 괜찮나요?","..해도 괜찮을까요?","...하시면 안돼요",
+  "..해주시겠어요?","...를 좀 알려줄래?","...를 좀 줄래?","...좀 갖다 줄래?","~좀 해주시겠어요?",
+  "...하는 걸 도와줘","...하는 것 좀 도와줄래요?","...를 도와줄게","..를 도와줄까요?","그건 ...하는데 도움돼",
+  "...줄까?","...드릴까요?","...좀 갖다 드릴까요?","...해 드릴까요?","...가 필요하니?",
+  "..하는 거 잊지마","꼭 ...해라","꼭...해라","마음껏 ... 해라","주저하지 말고 ...해"
+];
+
+const day10Patterns = [
+  "...하는게 좋겠어","...하면 안돼","...하는게 좋을거야","너...해야해.","너 ...할 필요없어",
+  "넌 ...해야돼","넌...해야할거야","넌...하지 않아도돼","넌 꼭 ...해야돼","넌 절대로 ...하면 안돼",
+  "그렇게...하지 좀 마","...를 후회하게 될거야","내가 ...하라고 했잖아","내가 ...하지 말라고 했잖아","...라고 경고했어",
+  "기분이...해","... 같은 기분이야","..하면 ...해져","너 ..해 보인다","그건 ..인 건 같아",
+  "(보기에)...인것같아","(듣고 보니).. 인 것 같아","...같은 냄새가 나는데","...같은 맛이야","(느낌상)...인것같아"
+];
+
+const day11Patterns = [
+  "너... 한 것 같구나","너 ...한 것 같아","... 인 것 같아","넌 .. 한 것 같지 않아","그건 ... 한 것 같지 않아",
+  "(추측컨대)...인 것 같아","뭐가...하는지 알아?","누가 ...하는지 알아?","분명히.. 일거야","분명히...였을거야",
+  "빨리 ...하고 싶어","...를 못참겠어","..를 멈출 수가 없어","...할 형편이 못돼","...도 못하겠어",
+  "난 ...를 잘해","난...에는 별로 소질이 없어","너무 ...해서 ...할 수 없어","난 ...할 정도로...하지않아","...할수 있을거야",
+  "..하는 건 불가능해","...하는게 가능해?","...하는 게 가능할까요?","...할 가능성이 높아","...할 가능성이 있어?"
+];
+
+const day12Patterns = [
+  "넌 ...할수도 있어","넌 ...할 수도 있었어","나 ...일지도 몰라","나 ...했을지도 몰라","나...할 수 있을지도 몰라",
+  "네가 ....하면 좋겠어","당신이...해주면 해요","네가 ...하지 않았으면 해","내가 ...할까?","내가 뭘...할까?",
+  "...하시겠어요?","무슨...를 하고.싶으세요","어디서...하고싶으세요?","언제...하고 싶으세요?","...를 어떻게 해드릴까요?",
+  "난 ...가 더좋아","난...하는게 낫겠어","...하는 걸 더 좋아하세요?","...하는 게 낫겠어요?","어떤 것을 ...할래?",
+  "...하고 싶어?","...하고 싶지 않아","..하고 싶니?","..하고 싶은 기분이야","...할 기분이 아니야"
+];
+
+const day13Patterns = [
+  "~는 어때?","네~는 어때?","어떻게 ~하니?","어떻게~했어?","어떻게~할거야?",
+  "내가 어떻게~하지","제가 어떻게~할 수 있나요?","너 어떻게 ~할 수 있어?","~는 어떻게 됐어?","~하는 방법을 가르쳐줄게",
+  "몇 개나/몇명이나?","~중 몇 개나/몇 명이나?","얼마나~?","얼마나 자주~?",
+  "얼마나 멀리~?","언제쯤~?","얼마나 오래?","~하는데 얼마나 걸리니?","~하는데 ~가 걸려",
+  "~하는데 얼마나 있어야 되죠?","~한다고 약속할게","~한다고 약속하는 거야?","너 ~한다고 약속했잖아","~하지 않을게", "절대~하지않겠어"
+];
+
+const day14Patterns = [
+ "~하기로 결정했어","~하지 않기로 결정했어","...는 결정했나요?","왜..하기로 결정한거야?",
+  "...하기로 결정했어","...하면좋겠어","네가..하기를 바랄게","...하길바라자","...였으면 좋겠어",
+  "...할 수 있다면 좋겠어","한번 ...해봐","...하려고 노력해봐","...하지 않도록 해봐","...하려고 노력중이야",
+  "우리...하도록 해보자","...에 질렸어","..하는데 정말 질렸어","...하는게 지긋지긋해","...를 더 이상 못참겠어",
+  "내가 몇 번이나 ...해야해?","완전...하네!","넌 왜 만날 ...니?","왜 ...하지 않았어?","...하지도 마", "넌...도 모르면서"
+];
+
+const day15Patterns = [
+ "..했어야 했는데","...하는 게 아니었는데","절대...하지 말았어야 했는데","...하지 말았어야 하는데",
+  "...한 걸 후회해","...에 감동받았어","...가 걱정돼","얼마나 ...한지 모르겠어요","너 때문에 내가 ...해",
+  "나 ...하게 하지마","이제 ..할 시간이야","..할 시간이 없어","...할때마다","가장 최근에...했을때",
+  "...하는 건 이게 마지막이야","아무도...하지않아","아무도...를 안믿을거야","아무도...못해","--말고는 아무도...못해",
+  "--보다 더 ...한 사람은 없어","그 무엇도 ..할 수 없어","단지...일 뿐","...와 아무 관련이 없어","--보다 더 ...한 건 없어","무슨 ...를 해도"
+];
+
+const day16Patterns = [
+  "누구..하는 사람?","..한 사람 있었어?","...인 사람?","... 할 수 있는 사람?",
+  "....한 사람 있어?","...한 기억이 나","...기억하니?","잊지 않고...했어?","...하는 거 잊지마",
+  "...가 생각이 안나","...를 깜박했어","...하는 걸 깜박했어","...는 그만 잊어버려","나에게 ...하라고 일러줘",
+  "A를 보니 ...가 생각나는 군","난 ...하기로 했어","너 ...하면 안 되잖아","원래 ..해야 하는 건데","내가 ...해야 되는 거야?",
+  "내가 뭘 ...해야 하지?","네가 ...해야 하는 건데","네가 ...할 줄은 몰랐어","...할 줄은 몰랐어","A가 ...할까?", "A가 언제 ...할 것 같아요?"
+];
+
+const day17Patterns = [
+ "~를 본 적 있어","~를 들었어","...한 적이 없어","...한 적이 한번도 없어",
+  "...해본 적 있어?","계속... 해왔어","항상...해왔어","계속...해오고있어","계속...를못해오고있어",
+  "넌 계속...하는 구나","계속...했니?","그동안 어디서...했어?","...한 지 얼마나 됐어?","...한지 얼마나 됐지",
+  "...한지 좀 됐지","벌써...했어","이제 막...했어","아직 ...못했어","(이제)...했어?",
+  "....는 다 했어?","...하는 건 쉽지 않아","...하는 게 훨씬 쉬워","..하는 건 어려워","...하기가 어려워", "...하는게 중요해"
+];
+
+const day18Patterns = [
+ "...하기가 힘들어","...하기가 힘들어","...에 문제가 있어","...에 문제가 있어",
+  "...하기에 너무 늦었어","내가...해야하니?","내가 뭘...해야하지?","내가...해야할까?","내가 뭘...해야 할까?",
+  "나 뭘...하지?","...일거야","...할 수 있을거야","그거 ...하겠는데","...안 할거야",
+  "...하는게 ...일까요?","만약 ...가 있다면","네가 원하면, 내가 ...할게","내가 너라면","내가..한다면,....할텐데",
+  "내가...했다면...했을텐데","...한다면 어떡하지?","...한다고 해도","(비록)...이지만","비록....이지만", "마치...인것처럼"
+];
+
+const day19Patterns = [
+ "...하면 바로","...하기만 하면","...할 때쯤에는","...할지도 모르니깐",
+  "이제...하니깐","...하는게 뭐든","...할때마다","어디서...하든","누가...한지 몰라도",
+  "아무리...해도","..가...하게하다","...이 ...되게 하다","...이...되도록 만들다","...하게 해줄게",
+  "...가...하게 하지 않을 거야","점점...해지다","...를 잘 알고 있니?","..에 익숙하지 않아","..에 점점 익숙해지고 있어",
+  "...하곤 했지","..가 있어","...봤어?","너 ...했다며",
+  "...하니까 딱 알겠던데", "너..해선 안 될 것 같아"
+];
+
+const day20Patterns = [
+ "...는 미처 몰랐어","난 결국 ...하고 말았어","이런 걸","그런 건",
+  "....를 말해줄게","...설명해줄게","중요한 건...라는 거야","내 말은...라는 거야","..라고 치자",
+  "...인 것 같아","미안하지만","...하기는 싫지만,...","...인 것 같아","혹시 네가 ...하지 않을까 해서",
+  "...하는게 좋겠어","분명히..해","...를 알 수가 없어","왜...한지 모르겠어","...를 따를게",
+  "그렇게 ..한건 처음이었어","가장/아주..해","정말...해","정말...하고 싶지 않아","가장먼저하는것은"
+];
+
+function baseDays(){
+  const d1 = buildDay1WithOfficialExamples();
+  const d2 = { day:2, patterns: day2Patterns.map((ko, i)=>({ id:`D2P${i+1}`, ko, examples:[] })) };
+  const d3 = { day:3, patterns: day3Patterns.map((ko, i)=>({ id:`D3P${i+1}`, ko, examples:[] })) };
+  const d4 = { day:4, patterns: day4Patterns.map((ko, i)=>({ id:`D4P${i+1}`, ko, examples:[] })) };
+
+  const d5  = { day:5,  patterns: day5Patterns.map((ko, i)=>({ id:`D5P${i+1}`, ko, examples:[] })) };
+  const d6  = { day:6,  patterns: day6Patterns.map((ko, i)=>({ id:`D6P${i+1}`, ko, examples:[] })) };
+  const d7  = { day:7,  patterns: day7Patterns.map((ko, i)=>({ id:`D7P${i+1}`, ko, examples:[] })) };
+  const d8  = { day:8,  patterns: day8Patterns.map((ko, i)=>({ id:`D8P${i+1}`, ko, examples:[] })) };
+  const d9  = { day:9,  patterns: day9Patterns.map((ko, i)=>({ id:`D9P${i+1}`, ko, examples:[] })) };
+  const d10 = { day:10, patterns: day10Patterns.map((ko, i)=>({ id:`D10P${i+1}`, ko, examples:[] })) };
+  const d11 = { day:11, patterns: day11Patterns.map((ko, i)=>({ id:`D11P${i+1}`, ko, examples:[] })) };
+  const d12 = { day:12, patterns: day12Patterns.map((ko, i)=>({ id:`D12P${i+1}`, ko, examples:[] })) };
+  const d13 = { day:13, patterns: day13Patterns.map((ko, i)=>({ id:`D13P${i+1}`, ko, examples:[] })) };
+  const d14 = { day:14, patterns: day14Patterns.map((ko, i)=>({ id:`D14P${i+1}`, ko, examples:[] })) };
+  const d15 = { day:15, patterns: day15Patterns.map((ko, i)=>({ id:`D15P${i+1}`, ko, examples:[] })) };
+  const d16 = { day:16, patterns: day16Patterns.map((ko, i)=>({ id:`D16P${i+1}`, ko, examples:[] })) };
+  const d17 = { day:17, patterns: day17Patterns.map((ko, i)=>({ id:`D17P${i+1}`, ko, examples:[] })) };
+  const d18 = { day:18, patterns: day18Patterns.map((ko, i)=>({ id:`D18P${i+1}`, ko, examples:[] })) };
+  const d19 = { day:19, patterns: day19Patterns.map((ko, i)=>({ id:`D19P${i+1}`, ko, examples:[] })) };
+  const d20 = { day:20, patterns: day20Patterns.map((ko, i)=>({ id:`D20P${i+1}`, ko, examples:[] })) };
+
+  return [d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12,d13,d14,d15,d16,d17,d18,d19,d20];
+}
+
+/* =========================
+   Data Load / Merge
+   - Keep user custom days (>=21)
+   - Keep user edits (including deleted examples)
+   - Ensure base DAY1~20 always exist
+   - Remove day0
+========================= */
+function loadDays(){
+  const base = baseDays();
+  let saved = null;
+  try{
+    saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+  }catch(e){ saved = null; }
+
+  // If no saved data, initialize with base
+  if(!saved || !Array.isArray(saved)){
+    localStorage.setItem(STORE_KEY, JSON.stringify(base));
+    return base;
+  }
+
+  // Build map from saved
+  const savedByDay = new Map();
+  for(const d of saved){
+    if(!d || typeof d.day !== "number") continue;
+    if(d.day <= 0) continue; // remove day0/invalid
+    savedByDay.set(d.day, d);
+  }
+
+  // Merge base days: prefer saved version if exists
+  const merged = [];
+  for(const b of base){
+    const s = savedByDay.get(b.day);
+    if(s){
+      // ensure structure
+      merged.push(normalizeDay(s, b));
+      savedByDay.delete(b.day);
+    }else{
+      merged.push(normalizeDay(b, b));
+    }
+  }
+
+  // Add remaining saved custom days (>=21)
+  const extraDays = Array.from(savedByDay.values())
+    .filter(d => typeof d.day === "number" && d.day >= 21)
+    .map(d => normalizeDay(d, null))
+    .sort((a,b)=>a.day-b.day);
+
+  merged.push(...extraDays);
+
+  // Persist cleaned
+  localStorage.setItem(STORE_KEY, JSON.stringify(merged));
+  return merged;
+}
+
+function normalizeDay(dayObj, baseDay){
+  const day = Number(dayObj.day);
+  const patterns = Array.isArray(dayObj.patterns) ? dayObj.patterns : (baseDay?.patterns || []);
+  const normPatterns = patterns.map((p, idx)=>{
+    const id = p?.id || (baseDay?.patterns?.[idx]?.id) || uid(`D${day}P`);
+    const ko = safeTrim(p?.ko ?? baseDay?.patterns?.[idx]?.ko ?? "");
+    const examples = Array.isArray(p?.examples) ? p.examples : (baseDay?.patterns?.[idx]?.examples || []);
+    const normExamples = examples.map(ex=>({
+      id: ex?.id || uid("ex"),
+      ko: safeTrim(ex?.ko ?? ""),
+      en: safeTrim(ex?.en ?? ""),
+      source: ex?.source === "official" ? "official" : "user"
+    }));
+    return { id, ko, examples: normExamples };
+  }).filter(p => p.ko.length>0); // remove empty
+  return { day, patterns: normPatterns };
+}
+
+function saveDays(){
+  localStorage.setItem(STORE_KEY, JSON.stringify(state.days));
+}
+
+function loadUI(){
+  try{
+    return JSON.parse(localStorage.getItem(STORE_UI) || "null") || {};
+  }catch(e){
+    return {};
+  }
+}
+function saveUI(){
+  localStorage.setItem(STORE_UI, JSON.stringify(state.ui));
+}
+
+/* =========================
+   App State
+========================= */
+const state = {
+  days: [],
+  ui: {
+    selectedDays: [],   // numbers
+    quizCount: "전체"   // string
+  },
+  quiz: {
+    items: [],          // array of { day, patternId }
+    idx: 0,
+    wrong: new Set(),   // patternId
+    showAnswer: false,
+    current: null       // resolved pattern object
+  }
+};
+
+function getDayObj(dayNum){
+  return state.days.find(d=>d.day===dayNum) || null;
+}
+function findPatternById(pid){
+  for(const d of state.days){
+    const p = d.patterns.find(x=>x.id===pid);
+    if(p) return { day:d.day, pattern:p };
+  }
+  return null;
+}
+
+/* =========================
+   Render Home
+========================= */
+function renderDayButtons(){
+  const grid = $("#dayGrid");
+  grid.innerHTML = "";
+
+  // Only days that exist and have patterns
+  const days = state.days
+    .filter(d => d.day >= 1 && Array.isArray(d.patterns) && d.patterns.length>0)
+    .sort((a,b)=>a.day-b.day);
+
+  const selected = new Set(state.ui.selectedDays);
+
+  days.forEach(d=>{
+    const btn = document.createElement("div");
+    btn.className = "chip" + (selected.has(d.day) ? " selected" : "");
+    btn.dataset.day = String(d.day);
+
+    const count = d.patterns.length;
+    btn.innerHTML = `DAY ${d.day}<span class="mini">${count}개</span>`;
+    btn.addEventListener("click", ()=>{
+      const dayNum = Number(btn.dataset.day);
+      if(selected.has(dayNum)){
+        selected.delete(dayNum);
+      }else{
+        selected.add(dayNum);
+      }
+      state.ui.selectedDays = Array.from(selected).sort((a,b)=>a-b);
+      saveUI();
+      renderDayButtons();
+      updateStartEnabled();
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function renderCountButtons(){
+  const grid = $("#countGrid");
+  grid.innerHTML = "";
+  const opts = ["전체","10개","20개","30개","40개","50개","60개","70개","80개","90개","100개"];
+  opts.forEach(opt=>{
+    const btn = document.createElement("div");
+    btn.className = "chip" + (state.ui.quizCount===opt ? " selected" : "");
+    btn.textContent = opt;
+    btn.addEventListener("click", ()=>{
+      state.ui.quizCount = opt;
+      saveUI();
+      renderCountButtons();
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function updateStartEnabled(){
+  const start = $("#btnStart");
+  const ok = state.ui.selectedDays.length > 0;
+  start.disabled = !ok;
+  $("#homeStatus").textContent = ok ? "" : "DAY를 1개 이상 선택해야 시작할 수 있어요.";
+}
+
+/* =========================
+   Add Pattern (DAY21+)
+   - If day input empty: auto assign to first day>=21 with <25 patterns
+   - If specified day full(>=25): auto bump to next day
+========================= */
+function getAutoDayForNewPattern(){
+  let day = 21;
+  while(true){
+    let d = getDayObj(day);
+    if(!d){
+      // create new day
+      d = { day, patterns: [] };
+      state.days.push(d);
+      state.days.sort((a,b)=>a.day-b.day);
+      return day;
+    }
+    if((d.patterns?.length || 0) < 25) return day;
+    day++;
+  }
+}
+
+function addNewPattern(){
+  const ko = safeTrim($("#inpNewPattern").value);
+  if(!ko){
+    $("#addPatternStatus").textContent = "패턴 한글 의미를 입력해줘.";
+    return;
+  }
+
+  let dayInput = safeTrim($("#inpNewDay").value);
+  let dayNum = dayInput ? Number(dayInput) : getAutoDayForNewPattern();
+
+  if(!Number.isFinite(dayNum) || dayNum < 21){
+    dayNum = getAutoDayForNewPattern();
+  }
+
+  // If specified day is full, bump
+  while(true){
+    let d = getDayObj(dayNum);
+    if(!d){
+      d = { day: dayNum, patterns: [] };
+      state.days.push(d);
+      state.days.sort((a,b)=>a.day-b.day);
+    }
+    if(d.patterns.length < 25) break;
+    dayNum++;
+  }
+
+  const d = getDayObj(dayNum);
+  const pid = uid(`D${dayNum}P`);
+  d.patterns.push({ id: pid, ko, examples: [] });
+
+  saveDays();
+
+  $("#inpNewPattern").value = "";
+  $("#inpNewDay").value = ""; // keep clean to auto next time
+  $("#addPatternStatus").textContent = `추가 완료: DAY ${dayNum} (총 ${d.patterns.length}개)`;
+
+  // Refresh day buttons so DAY21/22 appears and never disappears
+  renderDayButtons();
+  updateStartEnabled();
+}
+
+/* =========================
+   Quiz Build / Start
+========================= */
+function buildQuizItems(){
+  const selectedDays = state.ui.selectedDays.slice().sort((a,b)=>a-b);
+
+  // Collect all patterns from selected days
+  const pool = [];
+  for(const dayNum of selectedDays){
+    const d = getDayObj(dayNum);
+    if(!d) continue;
+    for(const p of d.patterns){
+      pool.push({ day: dayNum, patternId: p.id });
+    }
+  }
+
+  const shuffled = shuffle(pool);
+
+  let items = shuffled;
+  if(state.ui.quizCount !== "전체"){
+    const n = Number(state.ui.quizCount.replace("개",""));
+    if(Number.isFinite(n) && n > 0){
+      items = shuffled.slice(0, Math.min(n, shuffled.length));
+    }
+  }
+  return items;
+}
+
+function startQuiz(){
+  $("#homeStatus").textContent = "";
+
+  if(state.ui.selectedDays.length === 0){
+    $("#homeStatus").textContent = "DAY를 1개 이상 선택해야 시작할 수 있어요.";
+    updateStartEnabled();
+    return;
+  }
+
+  const items = buildQuizItems();
+  if(items.length === 0){
+    $("#homeStatus").textContent = "선택한 DAY에 패턴이 없어요.";
+    return;
+  }
+
+  state.quiz.items = items; // already random each start
+  state.quiz.idx = 0;
+  state.quiz.wrong = new Set();
+  state.quiz.showAnswer = false;
+  state.quiz.current = null;
+
+  switchScreen("screenQuiz");
+  renderQuiz();
+}
+
+/* =========================
+   Quiz Render / Actions
+========================= */
+function renderQuiz(){
+  const idx = state.quiz.idx;
+  const total = state.quiz.items.length;
+
+  $("#progressText").textContent = `진행: ${idx+1} / ${total}`;
+  $("#quizStatus").textContent = "";
+  $("#exStatus").textContent = "";
+  $("#inpExKo").value = "";
+  $("#inpExEn").value = "";
+
+  const item = state.quiz.items[idx];
+  if(!item){
+    // quiz ended
+    finishQuiz();
+    return;
+  }
+
+  const found = findPatternById(item.patternId);
+  if(!found){
+    // if missing, skip
+    state.quiz.idx++;
+    renderQuiz();
+    return;
+  }
+
+  state.quiz.current = found; // {day, pattern}
+  $("#dayInfo").textContent = `DAY ${found.day}`;
+  $("#questionText").textContent = found.pattern.ko;
+
+  // Reset answer view
+  state.quiz.showAnswer = false;
+  $("#answerBox").classList.remove("show");
+  $("#btnShowAnswer").disabled = false;
+  $("#btnCorrect").disabled = false;
+  $("#btnWrong").disabled = false;
+
+  renderExamples(found.pattern);
+}
+
+function renderExamples(pattern){
+  const list = $("#exampleList");
+  list.innerHTML = "";
+
+  const ex = Array.isArray(pattern.examples) ? pattern.examples : [];
+
+  if(ex.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "exItem";
+    empty.innerHTML = `<div class="exKo">예문이 아직 없어요.</div><div class="exEn">아래에서 예문(한글/영어)을 추가해줘.</div>`;
+    list.appendChild(empty);
+    return;
+  }
+
+  ex.forEach((e, i)=>{
+    const item = document.createElement("div");
+    item.className = "exItem";
+    const ko = e.ko || "(한글 없음)";
+    const en = e.en || "(영어 없음)";
+    item.innerHTML = `
+      <div class="exKo">${i+1}. ${escapeHtml(ko)}</div>
+      <div class="exEn">${escapeHtml(en)}</div>
+      <div class="exActions">
+        <button class="btn btn-small btn-ghost" data-exid="${e.id}">이 예문 삭제</button>
+      </div>
+    `;
+    const delBtn = item.querySelector("button");
+    attachPressGlow(delBtn);
+    delBtn.addEventListener("click", ()=>{
+      deleteOneExample(pattern.id, e.id);
+    });
+    list.appendChild(item);
+  });
+}
+
+function showAnswer(){
+  state.quiz.showAnswer = true;
+  $("#answerBox").classList.add("show");
+  $("#btnShowAnswer").disabled = true;
+}
+
+function markCorrect(isCorrect){
+  const cur = state.quiz.current;
+  if(!cur){
+    return;
+  }
+  if(!isCorrect){
+    state.quiz.wrong.add(cur.pattern.id);
+  }
+  state.quiz.idx++;
+  renderQuiz();
+}
+
+function addExampleToCurrent(){
+  const cur = state.quiz.current;
+  if(!cur){ return; }
+  const ko = safeTrim($("#inpExKo").value);
+  const en = safeTrim($("#inpExEn").value);
+
+  if(!ko && !en){
+    $("#exStatus").textContent = "한글/영어 중 하나라도 입력해줘.";
+    return;
+  }
+
+  const found = findPatternById(cur.pattern.id);
+  if(!found) return;
+
+  found.pattern.examples.push({ id: uid("ex"), ko, en, source:"user" });
+  saveDays();
+
+  $("#inpExKo").value = "";
+  $("#inpExEn").value = "";
+  $("#exStatus").textContent = "예문 추가 완료";
+  renderExamples(found.pattern);
+}
+
+function deleteOneExample(patternId, exId){
+  const found = findPatternById(patternId);
+  if(!found) return;
+
+  found.pattern.examples = (found.pattern.examples || []).filter(e => e.id !== exId);
+  saveDays();
+  $("#exStatus").textContent = "삭제 완료";
+  renderExamples(found.pattern);
+}
+
+function deleteAllExamplesOfCurrent(){
+  const cur = state.quiz.current;
+  if(!cur) return;
+  const found = findPatternById(cur.pattern.id);
+  if(!found) return;
+
+  found.pattern.examples = [];
+  saveDays();
+  $("#exStatus").textContent = "모든 예문 삭제 완료";
+  renderExamples(found.pattern);
+}
+
+/* =========================
+   Results
+========================= */
+function finishQuiz(){
+  // Build wrong list data (session wrong)
+  const wrongIds = Array.from(state.quiz.wrong);
+  const total = state.quiz.items.length;
+
+  const wrongDetails = wrongIds.map(pid => findPatternById(pid)).filter(Boolean);
+
+  // Store by date (optional, but helps)
+  const date = todayKey();
+  const logKey = "patternQuizApp.v7.wrongByDate";
+  let log = {};
+  try{ log = JSON.parse(localStorage.getItem(logKey) || "{}"); }catch(e){ log = {}; }
+  log[date] = wrongDetails.map(w => ({
+    day: w.day,
+    id: w.pattern.id,
+    ko: w.pattern.ko,
+    examples: (w.pattern.examples || []).map(ex => ({ ko: ex.ko, en: ex.en }))
+  }));
+  localStorage.setItem(logKey, JSON.stringify(log));
+
+  // Render
+  $("#resultBig").textContent = `총 ${total}개 중 틀림 ${wrongDetails.length}개`;
+  $("#resultSmall").textContent = wrongDetails.length
+    ? "아래에 ‘오늘 틀린 패턴 + 예문’을 정리해뒀어."
+    : "오늘은 틀린 패턴이 없어!";
+
+  renderWrongList(wrongDetails);
+  $("#copyStatus").textContent = "";
+
+  switchScreen("screenResult");
+}
+
+function renderWrongList(wrongDetails){
+  const wrap = $("#wrongListWrap");
+  wrap.innerHTML = "";
+
+  if(wrongDetails.length === 0){
+    const div = document.createElement("div");
+    div.className = "wrongCard";
+    div.innerHTML = `<div class="wk">완벽! 틀린 패턴이 없습니다 🎉</div>`;
+    wrap.appendChild(div);
+    return;
+  }
+
+  wrongDetails.forEach((w, idx)=>{
+    const card = document.createElement("div");
+    card.className = "wrongCard";
+    card.innerHTML = `
+      <div class="wk">${idx+1}. ${escapeHtml(w.pattern.ko)} <span class="dayTag">DAY ${w.day}</span></div>
+      <div class="exList">${renderWrongExamplesHTML(w.pattern.examples)}</div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+function renderWrongExamplesHTML(examples){
+  const ex = Array.isArray(examples) ? examples : [];
+  if(ex.length === 0){
+    return `<div class="exItem"><div class="exKo">예문 없음</div><div class="exEn">퀴즈 화면에서 예문을 추가해줘.</div></div>`;
+  }
+  return ex.map((e, i)=>{
+    const ko = escapeHtml(e.ko || "(한글 없음)");
+    const en = escapeHtml(e.en || "(영어 없음)");
+    return `<div class="exItem"><div class="exKo">${i+1}. ${ko}</div><div class="exEn">${en}</div></div>`;
+  }).join("");
+}
+
+/* Copy wrong patterns: Korean block then English block */
+async function copyWrong(){
+  const wrongIds = Array.from(state.quiz.wrong);
+  const wrongDetails = wrongIds.map(pid => findPatternById(pid)).filter(Boolean);
+
+  if(wrongDetails.length === 0){
+    $("#copyStatus").textContent = "복사할 틀린 패턴이 없어요.";
+    return;
+  }
+
+  let koBlock = `[오늘 틀린 패턴 - 한글]\n`;
+  let enBlock = `\n[오늘 틀린 패턴 - 영어]\n`;
+
+  wrongDetails.forEach((w, idx)=>{
+    const n = idx+1;
+    koBlock += `${n}. (DAY ${w.day}) ${w.pattern.ko}\n`;
+    const ex = w.pattern.examples || [];
+    if(ex.length){
+      ex.forEach((e,i)=>{
+        koBlock += `   - ${i+1}) ${e.ko || ""}\n`;
+      });
+    }else{
+      koBlock += `   - (예문 없음)\n`;
+    }
+
+    enBlock += `${n}. (DAY ${w.day}) ${w.pattern.ko}\n`;
+    if(ex.length){
+      ex.forEach((e,i)=>{
+        enBlock += `   - ${i+1}) ${e.en || ""}\n`;
+      });
+    }else{
+      enBlock += `   - (No examples)\n`;
+    }
+    koBlock += `\n`;
+    enBlock += `\n`;
+  });
+
+  const text = koBlock + enBlock;
+  const ok = await copyText(text);
+  $("#copyStatus").textContent = ok ? "복사 완료 (알림창 없이 조용히 복사됐어)." : "복사 실패 (브라우저 권한을 확인해줘).";
+}
+
+/* =========================
+   Manage Screen
+========================= */
+function renderManage(){
+  const dump = state.days
+    .filter(d=>d.day>=1)
+    .sort((a,b)=>a.day-b.day)
+    .map(d=>{
+      return `DAY ${d.day} (${d.patterns.length}개)\n` + d.patterns.map((p,i)=>{
+        return `  ${i+1}. ${p.ko}  [예문:${(p.examples||[]).length}]`;
+      }).join("\n");
+    }).join("\n\n");
+  $("#manageDump").textContent = dump || "(데이터 없음)";
+}
+
+/* =========================
+   Screen Switch
+========================= */
+function switchScreen(id){
+  $$(".screen").forEach(s=>s.classList.remove("active"));
+  $("#"+id).classList.add("active");
+}
+
+/* =========================
+   HTML escape
+========================= */
+function escapeHtml(str){
+  return (str ?? "").toString()
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/* =========================
+   Init / Event Wiring
+========================= */
+function init(){
+  // top pill
+  $("#todayPill").textContent = `오늘: ${todayKey()}`;
+
+  // Load data + UI
+  state.days = loadDays();
+  state.ui = { ...state.ui, ...loadUI() };
+
+  // Remove day0 if existed somewhere
+  state.days = state.days.filter(d => d.day >= 1);
+  saveDays();
+
+  // Default quiz count
+  if(!state.ui.quizCount) state.ui.quizCount = "전체";
+  if(!Array.isArray(state.ui.selectedDays)) state.ui.selectedDays = [];
+
+  // Render home
+  renderDayButtons();
+  renderCountButtons();
+  updateStartEnabled();
+
+  // Buttons
+  attachPressGlow($("#btnStart"));
+  $("#btnStart").addEventListener("click", startQuiz);
+
+  attachPressGlow($("#btnSelectAll"));
+  $("#btnSelectAll").addEventListener("click", ()=>{
+    const allDays = state.days
+      .filter(d=>d.day>=1 && d.patterns.length>0)
+      .map(d=>d.day)
+      .sort((a,b)=>a-b);
+    // toggle: if already all selected -> clear
+    const allSelected = allDays.length && allDays.every(x=>state.ui.selectedDays.includes(x));
+    state.ui.selectedDays = allSelected ? [] : allDays;
+    saveUI();
+    renderDayButtons();
+    updateStartEnabled();
+  });
+
+  // Add pattern
+  attachPressGlow($("#btnAddPattern"));
+  $("#btnAddPattern").addEventListener("click", addNewPattern);
+
+  // Quiz controls
+  ["btnBackHome","btnShowAnswer","btnCorrect","btnWrong","btnAddExample","btnDeleteAllExamples"]
+    .forEach(id=>attachPressGlow($("#"+id)));
+
+  $("#btnBackHome").addEventListener("click", ()=>{
+    switchScreen("screenHome");
+    renderDayButtons();
+    updateStartEnabled();
+  });
+  $("#btnShowAnswer").addEventListener("click", showAnswer);
+  $("#btnCorrect").addEventListener("click", ()=>markCorrect(true));
+  $("#btnWrong").addEventListener("click", ()=>markCorrect(false));
+  $("#btnAddExample").addEventListener("click", addExampleToCurrent);
+  $("#btnDeleteAllExamples").addEventListener("click", deleteAllExamplesOfCurrent);
+
+  // Results
+  ["btnRestart","btnCopyWrong"].forEach(id=>attachPressGlow($("#"+id)));
+  $("#btnRestart").addEventListener("click", ()=>{
+    // restart keeps current day selections & count
+    switchScreen("screenHome");
+    renderDayButtons();
+    renderCountButtons();
+    updateStartEnabled();
+  });
+  $("#btnCopyWrong").addEventListener("click", copyWrong);
+
+  // Manage
+  ["btnGoManage","btnManageBack"].forEach(id=>attachPressGlow($("#"+id)));
+  $("#btnGoManage").addEventListener("click", ()=>{
+    renderManage();
+    switchScreen("screenManage");
+  });
+  $("#btnManageBack").addEventListener("click", ()=>{
+    switchScreen("screenHome");
+    renderDayButtons();
+    updateStartEnabled();
+  });
+
+  // Press glow for all buttons created later
+  $$("button, .chip").forEach(el=>{
+    if(el.classList.contains("chip")) return; // chips have their own active feel
+    attachPressGlow(el);
+  });
+
+  // Ensure Start button not “stuck”
+  updateStartEnabled();
+}
+
+init();
+
+/* =========================
+   Global Press Glow on dynamic clicks (buttons)
+========================= */
+document.addEventListener("pointerdown", (e)=>{
+  const btn = e.target.closest("button.btn");
+  if(btn && !btn.disabled){
+    const r = btn.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * 100;
+    const py = ((e.clientY - r.top) / r.height) * 100;
+    btn.style.setProperty("--px", px.toFixed(1)+"%");
+    btn.style.setProperty("--py", py.toFixed(1)+"%");
+    btn.classList.add("pressed");
+  }
+});
+document.addEventListener("pointerup", (e)=>{
+  const btn = e.target.closest("button.btn");
+  if(btn) btn.classList.remove("pressed");
+});
+document.addEventListener("pointercancel", (e)=>{
+  const btn = e.target.closest("button.btn");
+  if(btn) btn.classList.remove("pressed");
+});
+
+/* =========================
+   Defensive: if quiz ends, ensure results show
+========================= */
+window.addEventListener("keydown", (e)=>{
+  // optional debug keys could be here, but we keep it clean
+});
+</script>
+</body>
+</html>
