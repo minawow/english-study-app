@@ -876,7 +876,24 @@ const day10Ko = [
 
   "꼭 무슨 일이 생길 것만 같아.","비가 올 것 같아.","나 혼자뿐인 것 같아.","싸우는 것 같아."
 ];
-
+function buildDay1WithOfficialExamples(){
+  const patterns = [];
+  for(let i=0;i<day1Patterns.length;i++){
+    const pid = `D1P${i+1}`;
+    const examples = [];
+    const baseIndex = i*4;
+    for(let k=0;k<4;k++){
+      examples.push({
+        id: uid("ex"),
+        en: day1En[baseIndex+k] ?? "",
+        ko: day1Ko[baseIndex+k] ?? "",
+        source:"official"
+      });
+    }
+    patterns.push({ id: pid, ko: day1Patterns[i], examples });
+  }
+  return { day: 1, patterns };
+}
 const day11Patterns = [
   "너... 한 것 같구나","너 ...한 것 같아","... 인 것 같아","넌 .. 한 것 같지 않아","그건 ... 한 것 같지 않아",
   "(추측컨대)...인 것 같아","뭐가...하는지 알아?","누가 ...하는지 알아?","분명히.. 일거야","분명히...였을거야",
