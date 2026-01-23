@@ -169,6 +169,7 @@ const KEY_ACC = "accSpeakingMinutes";    // 말하기훈련 누적시간
 // ✅ 스터디 시작일(고정): 2026-01-19부터 벌금 계산 시작
 const STUDY_START = "2026-01-19";
 const LS_FINE_START = "fineStartDate";
+const LS_FINE_RESET = "fineResetDate";
 
 // 누적시간 한 번만 리셋용 플래그
 const LS_ACC_RESET_ONCE = "accResetOnceDone";
@@ -182,11 +183,15 @@ const LEGACY_KEYS = [
 
 /** ===== 날짜: 휴대폰(로컬) 날짜 그대로(오늘) ===== */
 function todayKey(){
+  // ✅ 학습일 기준: 새벽 2시 이전은 "전날"로 간주 (예: 수요일 01:20 → 화요일 기록)
   const d = new Date();
+  if(d.getHours() < 2){
+    d.setDate(d.getDate() - 1);
+  }
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return `${y}-${m}-${day}`; // ✅ 로컬 기준 YYYY-MM-DD
 }
 function displayKeyWithWeekday(isoKey){
   const [y, m, d] = isoKey.split("-").map(Number);
@@ -248,6 +253,12 @@ function hasAnyRecord(row){
  */
 function calcFineForDateWithData(data, dateKey, user){
   if(isWeekendKey(dateKey)) return 0;
+
+  // ✅ 벌금 집계 시작일 + (추가) 전체 초기화 시점 이후만 벌금 계산
+  const fineStartBase = localStorage.getItem(LS_FINE_START) || STUDY_START;
+  const fineReset = localStorage.getItem(LS_FINE_RESET) || fineStartBase;
+  const fineStart = (fineReset > fineStartBase) ? fineReset : fineStartBase;
+  if(dateKey < fineStart) return 0;
 
   const row = data[dateKey]?.[user];
   const has = hasAnyRecord(row);
@@ -576,7 +587,9 @@ function renderTodayFine(){
   if(!detail) return;
 
   // 시작일 이전은 0원
-  const start = localStorage.getItem(LS_FINE_START) || STUDY_START;
+  const startBase = localStorage.getItem(LS_FINE_START) || STUDY_START;
+  const reset = localStorage.getItem(LS_FINE_RESET) || startBase;
+  const start = (reset > startBase) ? reset : startBase;
   if(k < start){
     detail.innerHTML = `스터디 시작일(${start}) 이전이라 벌금 정산이 없습니다. <b>(0원)</b>`;
     return;
@@ -714,6 +727,9 @@ function resetAll(){
   // ✅ 시작일 고정 유지
   localStorage.setItem(LS_FINE_START, STUDY_START);
 
+  // ✅ (추가) 벌금 합계 리셋: 초기화 시점 이후만 벌금 계산
+  localStorage.setItem(LS_FINE_RESET, todayKey());
+
   alert("초기화 완료 (학습기록 삭제 & 시작일은 2026-01-19로 유지)");
   renderAll();
 }
@@ -819,6 +835,8 @@ function boot(){
 
   // ✅ 벌금 시작일은 항상 2026-01-19로 고정
   localStorage.setItem(LS_FINE_START, STUDY_START);
+  // ✅ (추가) 리셋 기준일이 없으면 시작일로 초기 설정 (있으면 유지)
+  if(!localStorage.getItem(LS_FINE_RESET)) localStorage.setItem(LS_FINE_RESET, STUDY_START);
 
   if(remembered() && currentUser()){
     document.getElementById("nameScreen").classList.add("hidden");
