@@ -876,23 +876,29 @@ const day10Ko = [
 
   "꼭 무슨 일이 생길 것만 같아.","비가 올 것 같아.","나 혼자뿐인 것 같아.","싸우는 것 같아."
 ];
-function buildDay1WithOfficialExamples(){
+function buildDay10WithOfficialExamples(){
   const patterns = [];
-  for(let i=0;i<day1Patterns.length;i++){
-    const pid = `D1P${i+1}`;
+  for(let i=0;i<day10Patterns.length;i++){
+    const pid = `D10P${i+1}`;
     const examples = [];
-    const baseIndex = i*4;
+    const baseIndex = i * 4;   // ✅ 패턴 1개당 예문 4개
+
     for(let k=0;k<4;k++){
       examples.push({
         id: uid("ex"),
-        en: day1En[baseIndex+k] ?? "",
-        ko: day1Ko[baseIndex+k] ?? "",
-        source:"official"
+        en: day10En[baseIndex + k] ?? "",
+        ko: day10Ko[baseIndex + k] ?? "",
+        source: "official"
       });
     }
-    patterns.push({ id: pid, ko: day1Patterns[i], examples });
+
+    patterns.push({
+      id: pid,
+      ko: day10Patterns[i],
+      examples
+    });
   }
-  return { day: 1, patterns };
+  return { day: 10, patterns };
 }
 const day11Patterns = [
   "너... 한 것 같구나","너 ...한 것 같아","... 인 것 같아","넌 .. 한 것 같지 않아","그건 ... 한 것 같지 않아",
@@ -979,17 +985,10 @@ function baseDays(){
   days.push(makeDay(7, day7Patterns));
   days.push(makeDay(8, day8Patterns));
   days.push(makeDay(9, day9Patterns));
-  days.push(makeDay(10, day10Patterns));
+  days.push(buildDay10WithOfficialExamples()); // ✅ 여기만 변경
   days.push(makeDay(11, day11Patterns));
   days.push(makeDay(12, day12Patterns));
-  days.push(makeDay(13, day13Patterns));
-  days.push(makeDay(14, day14Patterns));
-  days.push(makeDay(15, day15Patterns));
-  days.push(makeDay(16, day16Patterns));
-  days.push(makeDay(17, day17Patterns));
-  days.push(makeDay(18, day18Patterns));
-  days.push(makeDay(19, day19Patterns));
-  days.push(makeDay(20, day20Patterns));
+  ...
   return days;
 }
 
