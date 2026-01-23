@@ -12,13 +12,13 @@
       --muted:#aab1c3;
       --line:rgba(255,255,255,.08);
 
-      --accent:#ffd6e7;     /* 시작 버튼 연한 분홍 */
+      --accent:#ffd6e7;
       --accentText:#251018;
 
-      --sel:#5af0c8;        /* 선택 강조 */
+      --sel:#5af0c8;
       --selText:#062018;
 
-      --danger:#ff3b30;     /* iOS red */
+      --danger:#ff3b30;
 
       --radius:18px;
       --shadow: 0 10px 30px rgba(0,0,0,.35);
@@ -74,7 +74,6 @@
     }
     .card .bd{ padding: 12px; }
 
-    /* Buttons */
     .btn{
       border:1px solid var(--line);
       background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
@@ -92,7 +91,6 @@
     .btn:active{ transform: translateY(1px) scale(.99); filter: brightness(.98); }
     .btn[disabled]{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
 
-    /* Premium press glow */
     .btn::after{
       content:"";
       position:absolute;
@@ -135,7 +133,6 @@
     .row.split{ display:flex; gap:10px; flex-wrap:wrap; }
     .row.split > *{ flex:1; min-width: 160px; }
 
-    /* Day buttons grid */
     .dayGrid{
       display:grid;
       grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
@@ -166,7 +163,6 @@
       display:block; font-size: 11px; opacity:.75; margin-top: 2px; font-weight: 700;
     }
 
-    /* Count chips */
     .countGrid{
       display:grid;
       grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
@@ -174,7 +170,6 @@
       margin-top: 8px;
     }
 
-    /* Inputs */
     label{ display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
     input, textarea, select{
       width: 100%;
@@ -194,11 +189,9 @@
     }
     .hint{ color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 8px; }
 
-    /* Screens */
     .screen{ display:none; }
     .screen.active{ display:block; }
 
-    /* Quiz */
     .qTop{
       display:flex; align-items:center; justify-content:space-between;
       gap:10px; flex-wrap:wrap; margin-bottom: 10px;
@@ -253,7 +246,6 @@
       border-top: 1px dashed rgba(255,255,255,.12);
     }
 
-    /* Results */
     .resultSummary{
       padding: 12px;
       border-radius: var(--radius);
@@ -635,17 +627,16 @@ async function copyText(text){
 }
 
 /* =========================
-   Storage Keys (현재 키)
-   + 레거시 키 자동 탐색/마이그레이션
+   Storage Keys
 ========================= */
-const STORE_KEY = "patternQuizApp.days";     // ✅ 앞으로 이 키로 고정 (키 바뀌면 데이터 사라지는 문제 방지)
+const STORE_KEY = "patternQuizApp.days";
 const STORE_UI  = "patternQuizApp.ui";
 function REVIEW_KEY(){ return "patternQuizApp.review." + todayKey(); }
 
 /* =========================
    Base Data (DAY1~DAY20)
-   - DAY1: 공식 예문 4개씩 포함
-   - DAY2~20: 패턴만(예문 비움)
+   - DAY1~DAY4: 공식 예문 포함
+   - DAY5~20: 패턴만(예문 비움)
 ========================= */
 
 /* DAY1 패턴 25개 */
@@ -711,26 +702,30 @@ const day1Ko = [
   "분명 더 나은 방법이 있을 거야.","맥주가 분명히 더 있을 텐데.","거기에 사람들이 분명 많이 올거야.","담당자가 분명히 있을 거야."
 ];
 
-function buildDay1WithOfficialExamples(){
+function buildDayWithOfficialExamples(dayNum, dayPatterns, enArr, koArr){
   const patterns = [];
-  for(let i=0;i<day1Patterns.length;i++){
-    const pid = `D1P${i+1}`;
+  for(let i=0;i<dayPatterns.length;i++){
+    const pid = `D${dayNum}P${i+1}`;
     const examples = [];
     const baseIndex = i*4;
     for(let k=0;k<4;k++){
       examples.push({
         id: uid("ex"),
-        en: day1En[baseIndex+k] ?? "",
-        ko: day1Ko[baseIndex+k] ?? "",
+        en: enArr[baseIndex+k] ?? "",
+        ko: koArr[baseIndex+k] ?? "",
         source:"official"
       });
     }
-    patterns.push({ id: pid, ko: day1Patterns[i], examples });
+    patterns.push({ id: pid, ko: dayPatterns[i], examples });
   }
-  return { day: 1, patterns };
+  return { day: dayNum, patterns };
 }
 
-/* DAY2~DAY4 */
+function buildDay1WithOfficialExamples(){
+  return buildDayWithOfficialExamples(1, day1Patterns, day1En, day1Ko);
+}
+
+/* DAY2~DAY4 패턴 */
 const day2Patterns = [
   "~가 없어","~한건 아무것도 없어","~하는 사람은 아무도 없어","~할 시간이 없어","~할 필요 없어",
   "~가 있어?","~가 좀 있어?","~한 게 있나요?","~하는 사람 있어?","~가 많나요?",
@@ -738,6 +733,61 @@ const day2Patterns = [
   "~하고 싶어","난 단지 ~하고 싶었어","~하고 싶지 않아","~하고 싶어요","난 정말 ~하고 싶어요",
   "~할래?","~하지 않을래?","뭘~하고 싶어?","왜~하고 싶어?","언제~하고 싶어?"
 ];
+const day2En = [
+  "There's no choice.","There's no rush.","There's no doubt about it.","There's no proof of that.",
+  "There's nothing to worry about.","There's nothing wrong with me.","There's nothing left to do.","There's nothing to be afraid of.",
+  "There's no one I can trust.","There's no one left.","There's no one I want to date.","There's no one here by that name.",
+  "There's no time to have dinner.","There's no time to change.","There's no time to argue.","There's no time to relax.",
+  "There's no need to be nervous.","There's no need to panic.","There's no need to thank me.","There's no need to worry about Julie.",
+  "Is there a bank nearby?","Is there a doctor here?","Is there a bus stop around here?","Is there a problem?",
+  "Is there any difference?","Is there any hope?","Is there any popcorn left?","Is there any reason to doubt Steve?",
+  "Is there anything good on TV?","Is there anything earlier?","Is there anything you need?","Is there anything I can do for you?",
+  "Is there anyone who can fix this?","Is there anyone who knows how to get there?","Is there anyone who has been to Italy?","Is there anyone who can speak Japanese?",
+  "Are there many places to shop?","Are there many sites to see?","Are there many students in this class?","Are there many bills to pay this month?",
+  "Is there any way I can reach him?","Is there any way I can help?","Is there any way to find out?","Is there any way to make it better?",
+  "There's no way to win the game.","There's no way to fix it.","There's no way she knows about this.","There's no way she's only 25.",
+  "There's no way I can be there on time.","There's no way I can eat them.","There's no way I can forgive him.","There's no way I can do this.",
+  "There's a faster way to get there.","There's an easier way to cook this.","There's a nicer way to say that.","There's a better way to get his attention.",
+  "What's the best way to lose weight?","What's the best way to manage money?","What's the best way to get there?","What's the best way to get in touch with you?",
+  "I want to move out.","I want to sleep in.","I want to get a second opinion.","I want to try surfing.",
+  "I just wanted to try something new.","I just wanted to thank you.","I just wanted to say hi.","I just wanted to surprise you.",
+  "I don't want to go alone.","I don't want to talk about it.","I don't want to go to the gym.","I don't want to work with her.",
+  "I'd like to try it on.","I'd like to change my hairdo.","I'd like to enlarge this picture.","I'd like to apologize.",
+  "I'm dying to see that movie.","I'm dying to go on a trip to Europe.","I'm dying to get started.","I'm dying to hear the news.",
+  "Do you want to have some dessert?","Do you want to see my pictures?","Do you want to come with me?","Do you want to grab a bite?",
+  "Don't you wanna learn how to drive?","Don't you wanna join us?","Don't you wanna know anything more?","Don't you wanna wear your sunglasses?",
+  "What do you want to drink?","What do you want to hear?","What do you want to eat for lunch?","What do you want to do after graduation?",
+  "Why do you want to move to Busan?","Why do you want to have a dog?","Why do you want to have the party here?","Why do you want to stir up trouble?",
+  "When do you want to eat?","When do you want to come?","When do you want to leave?","When do you want to meet?"
+];
+const day2Ko = [
+  "선택의 여지가 없네.","서두를 필요 없어.","의심의 여지가 없군.","그렇다는 증거가 없잖아.",
+  "걱정할 거 하나도 없어.","난 아무 문제 없어.","할 일이 하나도 안 남았어.","무서워할 거 하나도 없어.",
+  "믿을 수 있는 사람이 전혀 없어요.","남은 사람은 아무도 없어.","데이트하고 싶은 사람이 한 명도 없어요.","그런 이름 가진 사람 여기 없는데요.",
+  "저녁 먹을 시간이 없어.","옷 갈아입을 시간이 없어.","말싸움할 시간이 없어.","휴식을 취할 시간도 없어.",
+  "긴장할 필요 없어.","허둥지둥할 거 없어.","나한테 고마워할 거 없어.","줄리에 대해 걱정할 필요 없어.",
+  "근처에 은행이 있어?","여기 의사 있나요?","이 근처에 버스 정류장 있나요?","뭐 문제가 있어?",
+  "다른 점이라도 있어?","희망이 조금이라도 있는 거야?","팝콘이 남은 게 좀 있나?","스티브를 의심할 만한 이유가 있는 거야?",
+  "텔레비전에서 뭐 재미있는거 하니?","더 이른 것은 없나요?","뭐 필요한 거 있어?","내가 널 위해 할 수 있는 게 뭐 없을까?",
+  "이거 고칠 수 있는 사람 있나요?","거기에 어떻게 가는지 아는 사람 있어?","이탈리아에 가본 사람 있니?","일본어 할 줄 아는 사람 있어요?",
+  "쇼핑할 곳이 많나요?","볼 곳이 많나요?","이 수업에 학생들이 많나요?","이번 달에 낼 청구서가 많아요?",
+  "그 사람이랑 연락할 방법이 뭐 없을까요?","제가 도와드릴 방법이 뭐 없을까요?","알아낼 방법이 뭐 없을까요?","그것을 개선시킬 수 있는 방법이 뭐 없을까요?",
+  "그 게임을 이길 방법이 없어.","그걸 고치는 건 불가능해.","그 애가 이걸 알고 있을 리 없어.","그 여자가 고작 스물다섯일 리가 없어.",
+  "내가 제시간에 거기에 가는 건 불가능해.","난 그거 절대 못 먹어.","나는 절대 그 사람을 용서할 수 없어.","난 이거 절대 못 해.",
+  "거기 가는 더 빠른 길이 있어.","이것을 더 쉽게 요리하는 방법이 있어.","그런 말을 더 듣기 좋게 하는 방법이 있단다.","그 남자의 관심을 끌 더 좋은 방법이 있어.",
+  "살을 빼려면 어떤 방법이 가장 좋을까요?","돈을 어떻게 관리하는 게 가장 좋을까요?","거기까지 가려면 어떤 방법이 가장 좋을까요?","당신에게 연락하려면 어떻게 하는 게 가장 좋나요?",
+  "이사 가고 싶어.","늦잠 자고 싶어.","다른 의견을 듣고 싶어.","서핑을 해보고 싶어.",
+  "난 단지 새것을 써보고 싶었어.","난 단지 너에게 고맙다고 하고 싶었어.","그냥 안부 인사를 하고 싶었어.","난 단지 너를 놀라게 해주고 싶었을 뿐이야.",
+  "혼자 가고 싶지 않아.","그 얘기는 하고 싶지 않아.","난 헬스클럽에 가고 싶지 않아.","난 그 여자랑 일하고 싶지 않아.",
+  "그것을 입어보고 싶은데요.","머리 스타일을 바꾸고 싶어요.","이 사진을 확대하고 싶어요.","사과하고 싶어요.",
+  "난 정말 그 영화 보고 싶어.","난 정말 유럽여행을 하고 싶어.","난 얼른 시작하고 싶어.","난 그 소식을 듣고 싶어 미치겠어.",
+  "디저트 좀 먹을래?","내 사진 볼래?","나랑 같이 갈래?","간단히 뭐 좀 먹을까?",
+  "운전하는 거 배우지 않을래?","우리랑 같이 하지 않을래?","더 알고 싶지 않니?","선글라스 쓰지 그래?",
+  "뭘 마시고 싶어?","듣고 싶은 게 뭐야?","점심 뭐 먹고 싶어?","졸업한 다음에 뭘 하고 싶어요?",
+  "왜 부산으로 이사 가고 싶은 거야?","개를 왜 키우고 싶은데?","왜 여기에서 파티를 하고 싶은데?","넌 왜 문제를 일으키려고 하는 거야?",
+  "언제 먹고 싶니?","언제 오고 싶어?","언제 떠나고 싶은데?","언제 만날까?"
+];
+
 const day3Patterns = [
   "~는 어때?","~는 어때?","~하자","~하지 말자","~하는 게 좋겠어",
   "~하지 그래?","우리 ~하는 게 어때요?","우리 ~해야 할지도 모르겠어","우리 ~하자","제가~를 제안해도 될까요?",
@@ -745,12 +795,121 @@ const day3Patterns = [
   "~에 만족해","~해서 정말 기뻐","~해서 기쁘다","기꺼이 ~할게","~할 용의가 있어",
   "~해서 놀랐어","~를 믿을 수가 없어","넌 ~를 못 믿을 거야","~하다니 충격적이었어","~하는 건 당연해"
 ];
+const day3En = [
+  "How about lunch?","How about another game?","How about meeting on Friday?","How about getting a perm?",
+  "What about inviting the Smith family?","What about tomorrow?","What about inviting the Smith family?","What about a nice bottle of wine with dinner?",
+  "Let's go out for dinner.","Let's see a movie.","Let's keep it to ourselves.","Let's forget about last night.",
+  "Let's not talk about it any more.","Let's not drag this out.","Let's not jump to conclusions.","Let's not waste energy.",
+  "We'd better make a reservation.","We'd better get prepared.","We'd better get in line.","We'd better keep our eyes open.",
+  "Why don't you come over?","Why don't you try it on?","Why don't you call her?","Why don't you get a new camera?",
+  "Why don't we meet at the restaurant?","Why don't we go for a drive?","Why don't we adjourn the meeting?","Why don't we sleep on it?",
+  "Maybe we should start over.","Maybe we should think it over.","Maybe we should talk.","Maybe we should to go the lecture.",
+  "I suggest we go over the project together.","I suggest we leave him alone.","I suggest we don't tell our boss.","I suggest we throw a party.",
+  "May I suggest a wine?","May I suggest something else?","May I suggest a specialist?","May I suggest an alternative?",
+  "I'm kind of tired.","I'm kind of hungry.","I'm kind of depressed.","I'm kind of feeling sorry for him.",
+  "I'm really impressed.","I'm really stressed out.","I'm really starving.","I'm really mad at you.",
+  "I'm absolutely sure.","I'm absolutely thrilled.","I'm absolutely exhausted.","I'm absolutely behind you on this.",
+  "It's a little weird.","It's a little complicated.","It's a little awkward.","It's a little far to walk.",
+  "This is totally awesome.","This is totally stupid.","This is totally unexpected.","This is totally what I wanted.",
+  "I'm happy with the result.","I'm happy with the outcome.","I'm happy with my new job.","I'm happy with all of you.",
+  "I'm so glad you made it.","I'm so glad to be here.","I'm so glad that's over.","I'm so glad to hear that.",
+  "It's nice to see you again.","It's nice to have the family together.","It's nice to hear your voice again.","It's nice to be back home.",
+  "I'd be happy to accompany you.","I'd be happy to show you around.","I'd be happy to make your dress.","I'd be happy to cover for you tomorrow.",
+  "I'm willing to give up everything.","I'm willing to do anything for you.","I'm willing to take that risk.","I'm willing to give it a try.",
+  "I was surprised to hear the news.","I was surprised to find him there.","I was surprised to see the results.","I was surprised to be selected.",
+  "I can't believe today is already Friday.","I can't believe you ate that.","I can't believe it's over between us.","I can't believe this is happening.",
+  "You wouldn't believe who I saw today.","You wouldn't believe what just happened.","You wouldn't believe what I just heard.","You wouldn't believe Jack's temper.",
+  "I was shocked that I got an F.","I was shocked to find out about the scandal.","I was shocked when she told me that.","I was shocked that she had a baby.",
+  "No wonder she hates him.","No wonder you're mad.","No wonder jenny flunked the test.","No wonder you didn't go."
+];
+const day3Ko = [
+  "점심 먹을래?","게임 한 판 더 할까?","금요일에 만날까?","파마하는 게 어때요?",
+  "스미스 가족을 초대하는 게 어때요?","내일은 어때?","스미스 가족을 초대하는 게 어때요?","저녁에 좋은 와인 한 병 곁들이는 건 어떨까?",
+  "저녁 먹으러 나가자!","영화 보자.","그건 우리 둘만 알고 있자.","어젯밤 일은 잊읍시다.",
+  "그 얘기는 더 이상 하지 말자.","이거 가지고 질질 끌지 말자.","우리 넘겨짚지 말자.","에너지를 낭비하지 말자.",
+  "예약을 하는 게 좋겠어.","준비를 하는 게 좋겠어.","줄을 서는 게 좋을 것 같아.","두 눈 똑바로 뜨고 있는 게 좋겠어.",
+  "여기로 오는 게 어때?","한번 입어보지 그래?","그 여자한테 전화하지 그래?","사진기를 새로 사는 게 어때?",
+  "우리 식당에서 만날까요?","우리 드라이브 갈까?","회의를 미루는 게 어때요?","(하룻밤 자며) 신중히 생각해보는 게 어때요?",
+  "다시 시작해야 할지도 모르겠어.","우리가 그걸 다시 생각해야 될지도 모르겠어.","우리 얘기 좀 해야 할 것 같아.","우리 그 강연에 가야 할 것 같아.",
+  "우리 그 프로젝트를 같이 검토했으면 해.","그 사람을 혼자 있게 내버려두자.","우리 상사에게는 말하지 말자.","우리 파티를 열자.",
+  "제가 와인을 하나 추천해도 될까요?","제가 다른 것을 제안해도 될까요?","제가 전문가 한 분 추천할까요?","제가 대안을 하나 제안해도 될까요?",
+  "좀 피곤하네.","좀 배고파.","좀 우울해.","그 사람한테 좀 미안하네.",
+  "정말 감동받았어.","정말 스트레스 받아.","배고파 죽겠어.","너한테 무지 화났거든.",
+  "정말로 확실하다니까.","완전 짜릿해.","완전히 지쳐버렸어.","이것에 대해선 전적으로 네 편이야.",
+  "좀 이상해.","좀 복잡해요.","좀 어색해.","걷기에는 좀 멀어요.",
+  "이거 완전 최고야.","이거 완전 바보 같아.","이건 완전히 생각지도 못한 거야.","이건 정말 내가 원하던 거예요.",
+  "난 결과에 만족해.","그 성과에 만족하고 있어.","난 새로 하게 된 일이 맘에 들어.","너희들 모두한테 만족해.",
+  "네가 그걸 해내서 정말 기뻐!","여기 오게 돼서 정말 기분이 좋아.","그게 끝나서 너무 좋아.","그 말 들이니까 정말 기뻐!",
+  "다시 보게 돼서 기쁘다.","가족들이 모이니 좋구나.","네 목소리를 다시 들어서 기뻐.","집에 돌아와서 좋아.",
+  "기꺼이 널 따라갈게.","기꺼이 안내해 드릴게요.","기꺼이 네 드레스를 만들어줄게.","기꺼이 내일 너 대신 해줄게.",
+  "기꺼이 모든 것을 포기하겠어.","널 위해서라면 뭐든지 할 거야.","위험을 무릅쓸 용의가 있어.","한번 시도해볼게.",
+  "그 소식 듣고 놀랐어.","그 사람이 거기 있는 걸 알고 놀랐지","결과를 보고 놀라버렸어.","제가 선택돼서 놀랐습니다.",
+  "오늘이 벌써 금요일이라니 믿기지 않아.","네가 저걸 먹었다니 믿을 수 없어.","우리 사이가 끝났다는 게 믿어지지 않아.","이런 일이 일어나다니 말도 안 돼.",
+  "내가 오늘 누굴 봤는지 넌 못 믿을 거야.","방금 무슨 일이 있었는지 넌 못 믿을 거야.","내가 방금 무슨 얘기를 들었는지 넌 못 믿을 거야.","넌 잭의 성질을 못 믿을 거야.",
+  "내가 F를 받다니 충격적이었어.","그 스캔들을 알고는 충격 받았어.","그 애가 그 말을 했을 때 난 충격 받았어.","그 여자에게 아이가 있었다니 충격적이였어.",
+  "그 애가 그 남자를 싫어하는 건 당연해.","네가 화낼 만도 하네.","제니가 시험에 낙제한 건 당연한 일이야.","네가 안 갔을 만도 하네."
+];
+
 const day4Patterns = [
   "난 ~가 무서워","난~가 걱정돼","~ 때문에 긴장돼","~하다니 실망이야","~해서 참 답답해",
   "~를 좋아하니?","나 ~를 좋아해","난~에 빠졌어","난 ~를 좋아하지 않아","난~하는 방식이 맘에 안들어",
   "~할 때가 좋아","~하면 정말 싫어","~에관심있어요?","~에 관심없어요","~는 신경안써",
   "네 ~가 멋진데","네가 ~하는 방식이 좋아","넌 참~하구나","넌~를 잘하는구나","넌 감각이 뛰어나구나",
   "~해서 고마워","~에 감사드려요","~해주신다면정말감사하겠어요","~해주시니 정말","~하다니 정말 고마워"
+];
+const day4En = [
+  "I'm afraid of spiders.","I'm afraid of heights.","I'm afraid of going out alone at night.","I'm afraid of showing my feelings.",
+  "I'm worried about losing my job.","I'm worried about getting hurt.","I'm worried about my grade.","I'm worried about the environment.",
+  "I'm nervous about the presentation.","I'm nervous about my date.","I'm nervous about speaking in public.","I'm nervous about finishing in time.",
+  "I'm disappointed that he lied to me.","I'm disappointed that we lost.","I'm disappointed that you feel that way.","I'm disappointed that we won't get a vacation.",
+  "It's so frustrating to learn a new language.","It's so frustrating to live with my parents sometimes.","It's so frustrating to go on job interviews!","It's so frustrating that I don't have much money.",
+  "Do you like window shopping?","Do you like classical music?","Do you like eating out?","Do you like helping others?",
+  "I like jazz.","I like the new boss.","I like to play games.","I like hanging out with my friends.",
+  "I'm into baking.","I'm into studying English.","I'm into alternative rock music.","I'm into Renaissance art.",
+  "I don't like what she's wearing.","I don't like greasy food.","I don't like drinking beer.","I don't like going out.",
+  "I don't like the way he treats his wife.","I don't like the way he talks.","I don't like the way she's looking at you.","I don't like the way this furniture is arranged.",
+  "I like it when it's spicy.","I like it when it rains.","I like it when she smiles at me.","I like it when my coffee is hot.",
+  "I hate it when my car won't start.","I hate it when you talk like that.","I hate it when she tells me what to do.","I hate it when you disagree with me.",
+  "Are you interested in this kind of movie?","Are you interested in my daughter?","Are you interested in joining us for dinner?","Are you interested in splitting the cost?",
+  "I'm not interested in keeping secrets.","I'm not interested in your opinion.","I'm not interested in him.","I'm not interested in babysitting.",
+  "I don't care whether it is true or not.","I don't care what anybody says.","I don't care what others think.","I don't care how much it costs.",
+  "I like your new hairstyle.","I like your purse.","I like your cell phone.","I like your accent.",
+  "I like the way you think.","I like the way you laugh.","I like the way you treat me.","I like the way you sing.",
+  "You're so creative.","You're so smart.","You're so cute.","You're so talented.",
+  "You're a good cook.","You're a good listener.","You're a good writer.","You're a good talker",
+  "You have a good sense of direction.","You have a good sense of humor.","You have a good sense of style.","You have a good sense of smell.",
+  "Thank you for waiting.","Thank you for staying late.","Thank you for the compliment.","Thank you for the ride.",
+  "I appreciate your concern.","I appreciate your help.","I appreciate your call.","I appreciate your kindness.",
+  "I'd really appreciate it if you could do me a favor.","I'd really appreciate it if you could do this for me.","I'd really appreciate it if you could stop by here.","I'd really appreciate it if you could keep this quiet.",
+  "It's very good of you to see me off.","It's very kind of you to say so.","It's very nice of you to invite me.","It's very thoughtful of you to send flowers.",
+  "How nice of you to pay for everything.","How nice of you to come!","How nice of you to offer!","How nice of you to say so!"
+];
+const day4Ko = [
+  "난 거미라면 질색이야.","난 높은 곳이 무서워.","밤에 혼자 밖에 나가는 게 무서워.","난 내 감정을 보여주는 게 무서워요.",
+  "난 직장을 잃을까봐 걱정돼.","난 상처받는 게 걱정돼.","난 내 성적이 걱정돼.","난 환경이 걱정돼.",
+  "난 그 발표 때문에 긴장돼.","난 데이트 때문에 긴장돼.","사람들 앞에서 말하는 것 때문에 긴장돼.","제시간에 끝낼 수 있을지 초조해.",
+  "그 애가 나에게 거짓말을 했다는 게 실망스러워.","우리가 져서 실망했어.","네가 그런 식으로 생각하다니 실망이야.","우리가 휴가를 못 갈 거라니 실망이야.",
+  "새로운 언어를 배우는 것은 정말 답답해.","부모님이랑 사는 게 가끔은 정말 답답해.","면접 보러 다니는 거 너무 짜증나!","돈이 얼마 없다는 게 정말 속상해.",
+  "아이 쇼핑 좋아해?","클래식 음악 좋아하니?","외식 좋아해?","다른 사람들을 돕는 걸 좋아하니?",
+  "난 재즈를 좋아해.","난 새로 온 상사가 마음에 들어.","난 게임하는 걸 좋아해.","난 친구들 만나서 노는 걸 좋아해.",
+  "난 빵·과자 굽는 것에 빠졌어.","난 영어 공부에 빠졌어.","난 얼터너티브 록 음악에 빠졌어.","난 르네상스 예술에 빠졌어.",
+  "그 애가 입은 옷이 마음에 안 들어.","난 기름진 음식을 안 좋아해.","난 맥주 마시는 걸 좋아하지 않아.","난 밖에 나가는 걸 좋아하지 않아.",
+  "그 녀석이 자기 아내를 대하는 태도가 마음에 안 들어.","그 사람 말투가 마음에 안 들어.","그 애가 널 쳐다보는 시선이 마음에 안 들어.","이 가구가 배치된 방식이 마음에 안 들어.",
+  "난 매운 게 좋더라.","난 비 올 때가 좋아.","그 애가 날 보고 웃으면 좋아.","난 커피가 뜨거울 때가 좋아.",
+  "난 내 차가 시동이 안 걸릴 때 정말 짜증나.","네가 그런 식으로 말하면 너무 싫어.","그 여자애가 나한테 이래라저래라 하면 진짜 싫어.","난 네가 내 생각에 반대할 때 기분이 나빠.",
+  "이런 종류의 영화에 관심 있어?","우리 딸한테 관심 있어요?","우리랑 저녁 같이 할래?","비용을 나누는 거 어때요?",
+  "난 비밀 지키는 것에는 관심이 없어.","난 당신 의견에는 관심 없어요.","난 그 남자한테는 관심 없거든.","난 아기 봐주는 일에는 관심 없어요.",
+  "그게 사실이든 아니든 난 상관없어요.","누가 뭐라고 하든 난 신경 안 써.","다른 사람들이 어떻게 생각하는지 난 신경 안 써.","돈이 얼마 들든 난 신경 안 써.",
+  "새로운 헤어스타일 멋진데.","네 지갑 예쁘다.","네 휴대폰 예쁘다.","억양이 멋지네요.",
+  "난 네 사고방식이 마음에 들어.","난 네가 그렇게 웃는 게 좋아.","난 네가 나를 대하는 방식이 마음에 들어.","난 네가 그렇게 노래하는 걸 좋아해.",
+  "넌 참 창의력이 뛰어나구나.","넌 참 똑똑하구나.","넌 참 귀여워.","넌 참 재능이 많구나.",
+  "요리를 잘하시네요.","넌 남의 말을 잘 들어줘.","넌 글을 잘 써.","넌 말을 잘해.",
+  "방향감각이 뛰어난데.","너 유머감각이 제법인데.","넌 패션감각이 좋구나.","넌 냄새를 잘 맡는구나.",
+  "기다려줘서 고마워.","늦게까지 있어줘서 고마워.","칭찬 고마워.","(차) 태워줘서 고마워.",
+  "걱정해주셔서 감사드려요.","도와주셔서 감사드려요.","전화 주셔서 감사드립니다.","친절하게 대해줘서 고마워.",
+  "내 부탁을 들어준다면 정말 감사하겠어요.","네가 이걸 해준다면 정말 고맙겠어.","여기에 들러준다면 정말 고맙겠어.","이걸 비밀로 지켜준다면 정말 감사하겠어요.",
+  "배웅해주셔서 정말 감사드려요.","그렇게 말해주셔서 정말 감사합니다.","저를 초대해주셔서 정말 감사드려요.","꽃을 보내주시다니 정말 사려 깊으세요.",
+  "전부 계산하다니 너 정말 착하구나!","와줘서 정말 고마워!","제안해주셔서 정말 감사드려요!","그런 말을 해줘서 정말 고마워!"
 ];
 
 /* DAY5~DAY20 (패턴만) */
@@ -871,12 +1030,13 @@ const day20Patterns = [
 function makeDay(dayNum, patterns){
   return { day: dayNum, patterns: patterns.map((ko, i)=>({ id:`D${dayNum}P${i+1}`, ko, examples:[] })) };
 }
+
 function baseDays(){
   const days = [];
   days.push(buildDay1WithOfficialExamples());
-  days.push(makeDay(2, day2Patterns));
-  days.push(makeDay(3, day3Patterns));
-  days.push(makeDay(4, day4Patterns));
+  days.push(buildDayWithOfficialExamples(2, day2Patterns, day2En, day2Ko));
+  days.push(buildDayWithOfficialExamples(3, day3Patterns, day3En, day3Ko));
+  days.push(buildDayWithOfficialExamples(4, day4Patterns, day4En, day4Ko));
   days.push(makeDay(5, day5Patterns));
   days.push(makeDay(6, day6Patterns));
   days.push(makeDay(7, day7Patterns));
@@ -898,6 +1058,7 @@ function baseDays(){
 
 /* =========================
    Load / Merge + Legacy Migration
+   ✅ 저장된 예문이 "빈 배열"이라도 base(공식 예문)가 있으면 자동 채움
 ========================= */
 function normalizeDay(dayObj, baseDay){
   const day = Number(dayObj.day);
@@ -905,8 +1066,17 @@ function normalizeDay(dayObj, baseDay){
   const normPatterns = patterns.map((p, idx)=>{
     const id = p?.id || (baseDay?.patterns?.[idx]?.id) || uid(`D${day}P`);
     const ko = safeTrim(p?.ko ?? baseDay?.patterns?.[idx]?.ko ?? "");
-    const examples = Array.isArray(p?.examples) ? p.examples : (baseDay?.patterns?.[idx]?.examples || []);
-    const normExamples = examples.map(ex=>({
+
+    const baseExamples = Array.isArray(baseDay?.patterns?.[idx]?.examples) ? baseDay.patterns[idx].examples : [];
+
+    let examples = Array.isArray(p?.examples) ? p.examples : baseExamples;
+
+    // ✅ 핵심: 저장된 예문이 "빈 배열"인데 baseExamples(공식)가 있으면 base로 채움
+    if(Array.isArray(p?.examples) && p.examples.length === 0 && baseExamples.length > 0){
+      examples = baseExamples;
+    }
+
+    const normExamples = (Array.isArray(examples) ? examples : []).map(ex=>({
       id: ex?.id || uid("ex"),
       ko: safeTrim(ex?.ko ?? ""),
       en: safeTrim(ex?.en ?? ""),
@@ -917,7 +1087,7 @@ function normalizeDay(dayObj, baseDay){
   return { day, patterns: normPatterns };
 }
 
-/* ✅ 레거시 저장키를 찾아서 가장 그럴듯한 데이터를 선택 */
+/* ✅ 레거시 저장키 탐색 */
 function findBestStoredDaysFromAnyKey(){
   const candidates = [];
   for(let i=0;i<localStorage.length;i++){
@@ -936,16 +1106,11 @@ function findBestStoredDaysFromAnyKey(){
 
       const maxDay = Math.max(...days.map(d=>d.day));
       const totalPatterns = days.reduce((sum,d)=>sum+(d.patterns?.length||0),0);
-      // 점수: day 수 + maxDay + 패턴 수
       const score = days.length*10000 + maxDay*100 + totalPatterns;
 
       candidates.push({ key:k, data:days, score });
-    }catch(e){
-      // ignore
-    }
+    }catch(e){}
   }
-
-  // STORE_KEY가 없으면, 예전 키 중 가장 score 높은 걸 사용
   candidates.sort((a,b)=>b.score-a.score);
   return candidates[0] || null;
 }
@@ -953,35 +1118,29 @@ function findBestStoredDaysFromAnyKey(){
 function loadDays(){
   const base = baseDays();
 
-  // 1) 현재 STORE_KEY가 있으면 우선 사용
   let saved = null;
   try{
     saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
   }catch(e){ saved = null; }
 
-  // 2) STORE_KEY가 없거나 이상하면, 레거시 키들에서 찾아서 마이그레이션
   if(!saved || !Array.isArray(saved) || saved.length===0){
     const best = findBestStoredDaysFromAnyKey();
     if(best && Array.isArray(best.data)){
       saved = best.data;
-      // 마이그레이션(복사): 앞으로 STORE_KEY로 저장
       localStorage.setItem(STORE_KEY, JSON.stringify(saved));
     }else{
-      // 아무것도 없으면 base로 초기화
       localStorage.setItem(STORE_KEY, JSON.stringify(base));
       return base;
     }
   }
 
-  // savedByDay
   const savedByDay = new Map();
   for(const d of saved){
     if(!d || typeof d.day !== "number") continue;
-    if(d.day <= 0) continue; // ✅ day0 차단
+    if(d.day <= 0) continue;
     savedByDay.set(d.day, d);
   }
 
-  // base day(1~20) + saved merge
   const merged = [];
   for(const b of base){
     const s = savedByDay.get(b.day);
@@ -993,7 +1152,6 @@ function loadDays(){
     }
   }
 
-  // extra days (>=21)
   const extraDays = Array.from(savedByDay.values())
     .filter(d => typeof d.day === "number" && d.day >= 21)
     .map(d => normalizeDay(d, null))
@@ -1001,7 +1159,6 @@ function loadDays(){
 
   merged.push(...extraDays);
 
-  // 최종 저장 (day0 제거 포함)
   const finalDays = merged.filter(d => d.day >= 1);
   localStorage.setItem(STORE_KEY, JSON.stringify(finalDays));
   return finalDays;
@@ -1616,13 +1773,11 @@ function init(){
   state.ui = { ...state.ui, ...loadUI() };
   state.review.items = loadReview();
 
-  // ✅ day0 방지
   state.days = state.days.filter(d => d.day >= 1);
 
   if(!state.ui.quizCount) state.ui.quizCount = "전체";
   if(!Array.isArray(state.ui.selectedDays)) state.ui.selectedDays = [];
 
-  // 선택된 day가 이제 존재하지 않으면 정리
   const existingDays = new Set(state.days.map(d=>d.day));
   state.ui.selectedDays = state.ui.selectedDays.filter(d=>existingDays.has(d));
 
@@ -1631,7 +1786,6 @@ function init(){
   updateStartEnabled();
   updateReviewBadge();
 
-  // Home
   attachPressGlow($("#btnStart"));
   $("#btnStart").addEventListener("click", startQuiz);
 
@@ -1650,7 +1804,6 @@ function init(){
   attachPressGlow($("#btnAddPattern"));
   $("#btnAddPattern").addEventListener("click", addNewPattern);
 
-  // Quiz
   ["btnBackHome","btnShowAnswer","btnNext","btnAddExample","btnDeleteAllExamples"]
     .forEach(id=>attachPressGlow($("#"+id)));
 
@@ -1664,7 +1817,6 @@ function init(){
   $("#btnAddExample").addEventListener("click", addExampleToCurrent);
   $("#btnDeleteAllExamples").addEventListener("click", deleteAllExamplesOfCurrent);
 
-  // Results
   ["btnRestart","btnCopyWrong","btnClearReview"].forEach(id=>attachPressGlow($("#"+id)));
   $("#btnRestart").addEventListener("click", ()=>{
     switchScreen("screenHome");
@@ -1680,7 +1832,6 @@ function init(){
     renderReviewCards(state.review.items);
   });
 
-  // Manage
   ["btnGoManage","btnManageBack","btnGoImport"].forEach(id=>attachPressGlow($("#"+id)));
   $("#btnGoManage").addEventListener("click", ()=>{
     renderManage();
@@ -1700,7 +1851,6 @@ function init(){
     switchScreen("screenImport");
   });
 
-  // Import
   ["btnImportBack","btnImportPreview","btnImportApply","btnImportClearDay"].forEach(id=>attachPressGlow($("#"+id)));
   $("#btnImportBack").addEventListener("click", ()=>{
     renderManage();
