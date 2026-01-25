@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>500 Pattern Test (Korean Pattern Quiz)</title>
   <style>
-    :root{
-      --bg:#0b0c10;
-      --card:#12141a;
-      --text:#f4f6ff;
-      --muted:#aab1c3;
-      --line:rgba(255,255,255,.08);
+:root{ㅁ
+      --bg:#f3f4f8;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --line:rgba(17,24,39,.12);
 
       --accent:#ffd6e7;
       --accentText:#251018;
@@ -21,14 +21,14 @@
       --danger:#ff3b30;
 
       --radius:18px;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --shadow2: 0 6px 14px rgba(0,0,0,.35);
+      --shadow: 0 10px 30px rgba(17,24,39,.08);
+      --shadow2: 0 6px 14px rgba(17,24,39,.08);
     }
     *{ box-sizing:border-box; }
     body{
       margin:0;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display","SF Pro Text", system-ui, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-      background: radial-gradient(1200px 800px at 20% 10%, #12162a 0%, var(--bg) 55%, #06070a 100%);
+            background: var(--bg);
       color:var(--text);
       min-height:100vh;
       padding: 14px 12px 18px;
@@ -43,7 +43,7 @@
     .title .sub{ font-size:12px; color:var(--muted); }
     .pill{
       padding: 8px 10px; border:1px solid var(--line);
-      background: rgba(255,255,255,.03);
+      background: rgba(17,24,39,.03);
       border-radius: 999px; color: var(--muted);
       font-size: 12px; white-space:nowrap;
     }
@@ -57,7 +57,7 @@
     @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
 
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      background: var(--card);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -70,13 +70,13 @@
       gap:10px;
     }
     .card .hd h2{
-      margin:0; font-size:14px; color:#eaf0ff; letter-spacing:.2px;
+      margin:0; font-size:14px; color:var(--text); letter-spacing:.2px;
     }
     .card .bd{ padding: 12px; }
 
     .btn{
       border:1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      background: rgba(17,24,39,.03);
       color: var(--text);
       padding: 11px 12px;
       border-radius: 14px;
@@ -95,7 +95,7 @@
       content:"";
       position:absolute;
       inset:-40%;
-      background: radial-gradient(circle at var(--px, 50%) var(--py, 40%), rgba(255,255,255,.24) 0%, rgba(255,255,255,0) 55%);
+            background: var(--bg);
       opacity:0;
       transition: opacity .18s ease;
       pointer-events:none;
@@ -116,7 +116,7 @@
       font-weight: 900;
     }
     .btn-ghost{
-      background: rgba(255,255,255,.03);
+      background: rgba(17,24,39,.03);
       border-color: var(--line);
       color: var(--text);
       box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 10px 24px rgba(0,0,0,.22);
@@ -142,7 +142,7 @@
       padding: 10px 10px;
       border-radius: 14px;
       border:1px solid var(--line);
-      background: rgba(255,255,255,.03);
+      background: rgba(17,24,39,.03);
       color: var(--text);
       font-size: 13px;
       cursor:pointer;
@@ -174,7 +174,7 @@
     input, textarea, select{
       width: 100%;
       border:1px solid var(--line);
-      background: rgba(0,0,0,.25);
+            background: #ffffff;
       color: var(--text);
       border-radius: 14px;
       padding: 12px 12px;
@@ -185,7 +185,7 @@
     textarea{ min-height: 60px; resize: vertical; }
     input:focus, textarea:focus{
       border-color: rgba(255,214,231,.55);
-      background: rgba(0,0,0,.28);
+            background: #ffffff;
     }
     .hint{ color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 8px; }
 
@@ -201,7 +201,7 @@
       font-size: 22px; line-height: 1.25;
       padding: 14px 14px;
       border-radius: var(--radius);
-      background: rgba(255,255,255,.03);
+      background: rgba(17,24,39,.03);
       border:1px solid var(--line);
       box-shadow: var(--shadow2);
       margin: 10px 0 12px;
@@ -214,23 +214,23 @@
       padding: 12px;
       border-radius: var(--radius);
       border:1px solid var(--line);
-      background: rgba(255,255,255,.03);
+      background: rgba(17,24,39,.03);
     }
     .answerBox.show{ display:block; }
 
     .aTitle{
       font-weight: 900; font-size: 13px; letter-spacing:.2px;
-      color: #f2f5ff; margin-bottom: 8px;
+      color: var(--text); margin-bottom: 8px;
     }
     .exList{ display:flex; flex-direction:column; gap:10px; }
     .exItem{
       padding: 10px 10px;
       border-radius: 14px;
       border:1px solid var(--line);
-      background: rgba(0,0,0,.22);
+      background: rgba(17,24,39,.03);
     }
     .exKo{
-      font-size: 14px; color: #f6f7ff;
+      font-size: 14px; color: var(--text);
       font-weight: 800; margin-bottom: 5px;
       word-break: keep-all;
     }
@@ -243,14 +243,14 @@
     .addExample{
       margin-top: 12px;
       padding-top: 12px;
-      border-top: 1px dashed rgba(255,255,255,.12);
+      border-top: 1px dashed rgba(17,24,39,.12);
     }
 
     .resultSummary{
       padding: 12px;
       border-radius: var(--radius);
       border:1px solid var(--line);
-      background: rgba(255,255,255,.03);
+      background: rgba(17,24,39,.03);
       margin-bottom: 12px;
     }
     .resultSummary .big{ font-size: 16px; font-weight: 900; margin-bottom: 6px; }
@@ -260,7 +260,7 @@
       padding: 12px;
       border-radius: var(--radius);
       border:1px solid var(--line);
-      background: rgba(255,255,255,.03);
+      background: rgba(17,24,39,.03);
       margin-bottom: 10px;
     }
     .wrongCard .wk{
@@ -277,7 +277,7 @@
       border-radius: 999px;
       border:1px solid var(--line);
       color: var(--muted);
-      background: rgba(0,0,0,.18);
+      background: rgba(17,24,39,.03);
       vertical-align: middle;
     }
 
@@ -297,7 +297,7 @@
       border-radius: 999px;
       border:1px solid var(--line);
       color: var(--muted);
-      background: rgba(0,0,0,.18);
+      background: rgba(17,24,39,.03);
     }
 
     .badge{
@@ -321,7 +321,14 @@
       color: var(--selText);
       box-shadow: 0 1px 0 rgba(255,255,255,.55) inset, 0 12px 24px rgba(90,240,200,.06);
     }
-  </style>
+  
+#homeExampleList textarea{
+  margin-top: 8px;
+}
+#homeExampleList textarea:first-child{
+  margin-top: 0;
+}
+</style>
 </head>
 <body>
 <div class="app">
